@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Refresh Access Token */
+        post: operations["refresh_access_token_api_v1_auth_refresh_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/me": {
         parameters: {
             query?: never;
@@ -115,7 +132,8 @@ export interface paths {
             cookie?: never;
         };
         get?: never;
-        put?: never;
+        /** Update strategy */
+        put: operations["update_strategy_api_v1_strategies__strategy_id__put"];
         post?: never;
         /** Delete strategy */
         delete: operations["delete_strategy_api_v1_strategies__strategy_id__delete"];
@@ -664,6 +682,142 @@ export interface paths {
         put?: never;
         /** Compute ATR order-block live signal */
         post: operations["run_atr_ob_signal_api_v1_live_signals_atr_order_block_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/paper/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Create or update live paper profile */
+        put: operations["upsert_live_paper_profile_api_v1_live_paper_profile_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/paper/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable live paper mode */
+        post: operations["play_live_paper_api_v1_live_paper_play_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/paper/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable live paper mode */
+        post: operations["stop_live_paper_api_v1_live_paper_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/paper/poll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Poll latest live paper trades and events */
+        get: operations["poll_live_paper_api_v1_live_paper_poll_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/trigger-now": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger manual market analysis job */
+        post: operations["trigger_analysis_now_api_v1_analysis_trigger_now_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get analysis runs history */
+        get: operations["get_analysis_runs_api_v1_analysis_runs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/market-state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current market state */
+        get: operations["get_market_state_api_v1_analysis_market_state_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/{symbol}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get current symbol analysis */
+        get: operations["get_symbol_analysis_api_v1_analysis__symbol__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1415,6 +1569,142 @@ export interface components {
              * @default 6
              */
             max_requotes: number;
+            /**
+             * Account Balance
+             * @default 1000
+             */
+            account_balance: number;
+        };
+        /** LivePaperEventRead */
+        LivePaperEventRead: {
+            /** Id */
+            id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Strategy Revision */
+            strategy_revision: number;
+            /** Event Type */
+            event_type: string;
+            /**
+             * Event Time
+             * Format: date-time
+             */
+            event_time: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** LivePaperPlayStopResponse */
+        LivePaperPlayStopResponse: {
+            profile: components["schemas"]["LivePaperProfileRead"];
+        };
+        /** LivePaperPollResponse */
+        LivePaperPollResponse: {
+            profile: components["schemas"]["LivePaperProfileRead"];
+            /** Trades */
+            trades?: components["schemas"]["LivePaperTradeRead"][];
+            /** Events */
+            events?: components["schemas"]["LivePaperEventRead"][];
+            /** Metrics */
+            metrics?: {
+                [key: string]: unknown;
+            };
+        };
+        /** LivePaperProfileRead */
+        LivePaperProfileRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Strategy Id */
+            strategy_id: number;
+            /** Strategy Revision */
+            strategy_revision: number;
+            /** Is Running */
+            is_running: boolean;
+            /** Total Balance Usdt */
+            total_balance_usdt: number;
+            /** Per Trade Usdt */
+            per_trade_usdt: number;
+            /** Last Processed At */
+            last_processed_at?: string | null;
+            /** Last Poll At */
+            last_poll_at?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** LivePaperProfileUpsertRequest */
+        LivePaperProfileUpsertRequest: {
+            /** Strategy Id */
+            strategy_id: number;
+            /** Total Balance Usdt */
+            total_balance_usdt: number;
+            /** Per Trade Usdt */
+            per_trade_usdt: number;
+        };
+        /** LivePaperTradeRead */
+        LivePaperTradeRead: {
+            /** Id */
+            id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Strategy Id */
+            strategy_id: number;
+            /** Strategy Revision */
+            strategy_revision: number;
+            /** Side */
+            side: string;
+            /**
+             * Entry Time
+             * Format: date-time
+             */
+            entry_time: string;
+            /**
+             * Exit Time
+             * Format: date-time
+             */
+            exit_time: string;
+            /** Entry Price */
+            entry_price: number;
+            /** Exit Price */
+            exit_price: number;
+            /** Pnl Usdt */
+            pnl_usdt: number;
+            /** Status */
+            status: string;
+            /** Raw Payload */
+            raw_payload?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
         };
         /** LiveSignalResult */
         LiveSignalResult: {
@@ -1578,6 +1868,10 @@ export interface components {
              * @default 5000
              */
             total_capital: number;
+            /** User Strategies */
+            user_strategies?: components["schemas"]["PortfolioUserStrategyInput"][];
+            /** Builtin Strategies */
+            builtin_strategies?: components["schemas"]["PortfolioBuiltinStrategyInput"][];
             /** Strategies */
             strategies?: components["schemas"]["PortfolioStrategyInput"][];
             /**
@@ -1586,12 +1880,30 @@ export interface components {
              */
             async_job: boolean;
         };
+        /** PortfolioBuiltinStrategyInput */
+        PortfolioBuiltinStrategyInput: {
+            /** Name */
+            name: string;
+            /**
+             * Allocation Pct
+             * @default 0
+             */
+            allocation_pct: number;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            };
+        };
         /** PortfolioCatalog */
         PortfolioCatalog: {
             /** Timeframes */
             timeframes: string[];
             /** Builtin Strategies */
             builtin_strategies: string[];
+            /** Builtin Strategy Params */
+            builtin_strategy_params?: {
+                [key: string]: string[];
+            };
         };
         /** PortfolioStrategyInput */
         PortfolioStrategyInput: {
@@ -1610,6 +1922,21 @@ export interface components {
             config?: {
                 [key: string]: unknown;
             };
+        };
+        /** PortfolioUserStrategyInput */
+        PortfolioUserStrategyInput: {
+            /** Strategy Id */
+            strategy_id: number;
+            /**
+             * Allocation Pct
+             * @default 0
+             */
+            allocation_pct: number;
+        };
+        /** RefreshTokenRequest */
+        RefreshTokenRequest: {
+            /** Refresh Token */
+            refresh_token: string;
         };
         /** SignInRequest */
         SignInRequest: {
@@ -1638,7 +1965,7 @@ export interface components {
              * @default dry_run
              * @enum {string}
              */
-            mode: "dry_run" | "paper" | "live";
+            mode: "dry_run" | "live";
             /**
              * Execute
              * @default false
@@ -1646,8 +1973,6 @@ export interface components {
             execute: boolean;
             /** Account Id */
             account_id?: number | null;
-            /** Entry Usdt */
-            entry_usdt?: number | null;
             /**
              * Fee Pct
              * @default 0.06
@@ -1867,10 +2192,29 @@ export interface components {
              */
             updated_at: string;
         };
+        /** StrategyUpdate */
+        StrategyUpdate: {
+            /** Name */
+            name?: string | null;
+            /** Strategy Type */
+            strategy_type?: string | null;
+            /** Version */
+            version?: string | null;
+            /** Description */
+            description?: string | null;
+            /** Is Active */
+            is_active?: boolean | null;
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            } | null;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
             access_token: string;
+            /** Refresh Token */
+            refresh_token: string;
             /**
              * Token Type
              * @default bearer
@@ -1878,6 +2222,8 @@ export interface components {
             token_type: string;
             /** Expires In */
             expires_in: number;
+            /** Refresh Expires In */
+            refresh_expires_in: number;
         };
         /** UserRead */
         UserRead: {
@@ -2140,6 +2486,39 @@ export interface operations {
             };
         };
     };
+    refresh_access_token_api_v1_auth_refresh_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshTokenRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     read_me_api_v1_auth_me_get: {
         parameters: {
             query?: never;
@@ -2210,6 +2589,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["StrategyCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StrategyRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_strategy_api_v1_strategies__strategy_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                strategy_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StrategyUpdate"];
             };
         };
         responses: {
@@ -3269,6 +3683,215 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LiveSignalResult"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_live_paper_profile_api_v1_live_paper_profile_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LivePaperProfileUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    play_live_paper_api_v1_live_paper_play_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperPlayStopResponse"];
+                };
+            };
+        };
+    };
+    stop_live_paper_api_v1_live_paper_stop_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperPlayStopResponse"];
+                };
+            };
+        };
+    };
+    poll_live_paper_api_v1_live_paper_poll_get: {
+        parameters: {
+            query?: {
+                last_trade_id?: number | null;
+                last_event_id?: number | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["LivePaperPollResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_analysis_now_api_v1_analysis_trigger_now_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_analysis_runs_api_v1_analysis_runs_get: {
+        parameters: {
+            query?: {
+                date?: string | null;
+                limit?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_market_state_api_v1_analysis_market_state_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_symbol_analysis_api_v1_analysis__symbol__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                symbol: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

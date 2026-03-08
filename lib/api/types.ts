@@ -10,23 +10,109 @@ export type SignInRequest = components["schemas"]["SignInRequest"];
 
 export type StrategyCreate = components["schemas"]["StrategyCreate"];
 export type StrategyRead = components["schemas"]["StrategyRead"];
-export type StrategyMetaResponse = components["schemas"]["StrategyMetaResponse"];
+export type StrategyMetaResponse =
+  components["schemas"]["StrategyMetaResponse"];
+export type StrategyUpdateRequest = {
+  name?: string | null;
+  strategy_type?: string | null;
+  version?: string | null;
+  description?: string | null;
+  is_active?: boolean | null;
+  config?: JsonRecord | null;
+};
 
 export type VwapBacktestRequest = components["schemas"]["VwapBacktestRequest"];
-export type AtrOrderBlockRequest = components["schemas"]["AtrOrderBlockRequest"];
-export type KnifeCatcherRequest = components["schemas"]["KnifeCatcherRequest"];
+export type AtrOrderBlockRequest =
+  components["schemas"]["AtrOrderBlockRequest"];
+export type KnifeCatcherRequest =
+  components["schemas"]["KnifeCatcherRequest"] & {
+    account_balance?: number;
+  };
 export type GridBotRequest = components["schemas"]["GridBotRequest"];
-export type IntradayMomentumRequest = components["schemas"]["IntradayMomentumRequest"];
-export type PortfolioBacktestRequest = components["schemas"]["PortfolioBacktestRequest"];
-export type PortfolioStrategyInput = components["schemas"]["PortfolioStrategyInput"];
-export type BacktestResponse = components["schemas"]["BacktestResponse"];
-export type BacktestCatalogResponse = components["schemas"]["BacktestCatalogResponse"];
-export type BuilderSignalRequest = components["schemas"]["BuilderSignalRequest"];
-export type BuilderSignalRunRequest = components["schemas"]["BuilderSignalRunRequest"];
+export type IntradayMomentumRequest =
+  components["schemas"]["IntradayMomentumRequest"];
+export type PortfolioStrategyInput =
+  components["schemas"]["PortfolioStrategyInput"];
+export type PortfolioUserStrategyInput = {
+  strategy_id: number;
+  allocation_pct: number;
+};
+export type PortfolioBuiltinStrategyInput = {
+  name: string;
+  allocation_pct: number;
+  config?: JsonRecord;
+};
+export type PortfolioBacktestRequest = {
+  total_capital: number;
+  user_strategies?: PortfolioUserStrategyInput[];
+  builtin_strategies?: PortfolioBuiltinStrategyInput[];
+  strategies?: PortfolioStrategyInput[];
+  async_job?: boolean;
+};
+export type EquityPoint = {
+  step: number;
+  time: string | null;
+  equity: number;
+  pnl_usdt: number;
+};
+
+export type BacktestSummary = {
+  total_trades?: number;
+  win_rate?: number;
+  total_pnl_usdt?: number;
+  initial_balance?: number;
+  final_balance?: number;
+  total_pnl?: number;
+  avg_risk_per_trade?: number;
+  [k: string]: unknown;
+};
+
+export type BacktestResponse = Omit<
+  components["schemas"]["BacktestResponse"],
+  "summary" | "trades" | "chart_points"
+> & {
+  summary: BacktestSummary;
+  trades: JsonRecord[];
+  chart_points: {
+    ohlcv?: JsonRecord[];
+    equity_curve?: EquityPoint[];
+    [k: string]: unknown;
+  };
+};
+type RawBacktestCatalogResponse =
+  components["schemas"]["BacktestCatalogResponse"];
+export type BacktestCatalogResponse = Omit<
+  RawBacktestCatalogResponse,
+  "portfolio"
+> & {
+  portfolio: RawBacktestCatalogResponse["portfolio"] & {
+    builtin_strategy_params?: Record<string, string[]>;
+  };
+};
+export type BuilderSignalRequest =
+  components["schemas"]["BuilderSignalRequest"];
+export type BuilderSignalRunRequest =
+  components["schemas"]["BuilderSignalRunRequest"];
 export type AtrObSignalRequest = components["schemas"]["AtrObSignalRequest"];
-export type AtrObSignalRunRequest = components["schemas"]["AtrObSignalRunRequest"];
-export type SignalExecuteRequest = components["schemas"]["SignalExecuteRequest"];
+export type AtrObSignalRunRequest =
+  components["schemas"]["AtrObSignalRunRequest"];
+export type SignalExecuteRequest =
+  components["schemas"]["SignalExecuteRequest"];
 export type LiveSignalResult = components["schemas"]["LiveSignalResult"];
+export type LivePaperProfileUpsertRequest =
+  components["schemas"]["LivePaperProfileUpsertRequest"];
+export type LivePaperProfileRead = components["schemas"]["LivePaperProfileRead"];
+export type LivePaperTradeRead = components["schemas"]["LivePaperTradeRead"];
+export type LivePaperEventRead = components["schemas"]["LivePaperEventRead"];
+type RawLivePaperPollResponse = components["schemas"]["LivePaperPollResponse"];
+export type LivePaperPollResponse = Omit<
+  RawLivePaperPollResponse,
+  "trades" | "historical_trades" | "live_trades_since_start"
+> & {
+  live_trades_since_start?: LivePaperTradeRead[];
+};
+export type LivePaperPlayStopResponse =
+  components["schemas"]["LivePaperPlayStopResponse"];
 
 export type MarketMetaResponse = components["schemas"]["MarketMetaResponse"];
 export type MarketOhlcvResponse = components["schemas"]["MarketOhlcvResponse"];
@@ -54,11 +140,15 @@ export type AuditMetaResponse = components["schemas"]["AuditMetaResponse"];
 
 export type ExchangeSecretIn = components["schemas"]["ExchangeSecretIn"];
 export type ExchangeSecretOut = components["schemas"]["ExchangeSecretOut"];
-export type ExchangeAccountCreate = components["schemas"]["ExchangeAccountCreate"];
+export type ExchangeAccountCreate =
+  components["schemas"]["ExchangeAccountCreate"];
 export type ExchangeAccountRead = components["schemas"]["ExchangeAccountRead"];
-export type ExchangeAccountUpdate = components["schemas"]["ExchangeAccountUpdate"];
-export type ExchangeAccountValidateResponse = components["schemas"]["ExchangeAccountValidateResponse"];
-export type ExchangeAccountsMetaResponse = components["schemas"]["ExchangeAccountsMetaResponse"];
+export type ExchangeAccountUpdate =
+  components["schemas"]["ExchangeAccountUpdate"];
+export type ExchangeAccountValidateResponse =
+  components["schemas"]["ExchangeAccountValidateResponse"];
+export type ExchangeAccountsMetaResponse =
+  components["schemas"]["ExchangeAccountsMetaResponse"];
 
 export type SpotOrderCreate = components["schemas"]["SpotOrderCreate"];
 export type SpotOrderRead = components["schemas"]["SpotOrderRead"];
@@ -108,6 +198,22 @@ export type AnalysisTrendExtraction = {
   flat?: TrendScenario;
 };
 
+export type IndicatorRecommendationScenario = {
+  probabilityPct: number;
+  takeProfit: number | null;
+  stopLoss: number | null;
+  indicatorSet: string[];
+};
+
+export type IndicatorRecommendations = {
+  recommendedFromAvailable: string[];
+  additionalSuggested: string[];
+  rationale: string;
+  bull?: IndicatorRecommendationScenario;
+  bear?: IndicatorRecommendationScenario;
+  flat?: IndicatorRecommendationScenario;
+};
+
 export type AnalysisStructured = {
   symbol?: string;
   timestamp?: string;
@@ -128,6 +234,7 @@ export type AnalysisRun = {
   analysisReport?: string | null;
   analysisStructured?: AnalysisStructured | null;
   trendExtraction?: AnalysisTrendExtraction | null;
+  indicatorRecommendations?: IndicatorRecommendations | null;
   error?: string | null;
   createdAt?: string;
   updatedAt?: string;
@@ -149,4 +256,94 @@ export type TriggerAnalysisNowResponse = {
   triggeredAt: string;
   source: AnalysisRunSource;
   sessionType: AnalysisSessionType | string;
+};
+
+export type PersonalAgentFlags = Record<string, boolean>;
+export type PersonalAgentWeights = Record<string, number>;
+
+export type PersonalAnalysisDefaultsRead = {
+  available_agents: string[];
+  agents: PersonalAgentFlags;
+  agent_weights: PersonalAgentWeights;
+};
+
+export type PersonalAnalysisProfileCreate = {
+  symbol: string;
+  query_prompt?: string | null;
+  agents?: PersonalAgentFlags | null;
+  agent_weights?: PersonalAgentWeights | null;
+  interval_minutes?: number;
+};
+
+export type PersonalAnalysisProfileUpdate = {
+  symbol?: string | null;
+  query_prompt?: string | null;
+  agents?: PersonalAgentFlags | null;
+  agent_weights?: PersonalAgentWeights | null;
+  interval_minutes?: number | null;
+  is_active?: boolean | null;
+};
+
+export type PersonalAnalysisProfileRead = {
+  id: number;
+  user_id: number;
+  symbol: string;
+  query_prompt: string | null;
+  agents: PersonalAgentFlags;
+  agent_weights: PersonalAgentWeights;
+  interval_minutes: number;
+  is_active: boolean;
+  next_run_at: string;
+  last_triggered_at: string | null;
+  last_completed_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PersonalAnalysisManualTriggerRequest = {
+  query_prompt?: string | null;
+  agents?: PersonalAgentFlags | null;
+  agent_weights?: PersonalAgentWeights | null;
+};
+
+export type PersonalAnalysisManualTriggerResponse = {
+  trade_job_id: string;
+  core_job_id: string;
+  status: string;
+  created_at: string;
+};
+
+export type PersonalAnalysisJobStatus =
+  | "pending"
+  | "processing"
+  | "completed"
+  | "failed"
+  | string;
+
+export type PersonalAnalysisJobRead = {
+  id: string;
+  user_id: number;
+  profile_id: number;
+  core_job_id: string;
+  status: PersonalAnalysisJobStatus;
+  attempt: number;
+  max_attempts: number;
+  error: string | null;
+  next_poll_at: string;
+  completed_at: string | null;
+  core_deleted_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type PersonalAnalysisHistoryRead = {
+  id: number;
+  user_id: number;
+  profile_id: number;
+  trade_job_id: string;
+  symbol: string;
+  analysis_data: JsonRecord;
+  core_completed_at: string | null;
+  created_at: string;
+  updated_at: string;
 };

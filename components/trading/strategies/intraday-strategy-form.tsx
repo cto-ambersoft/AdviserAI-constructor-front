@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Field, NumericField } from "@/components/trading/form-controls";
 import type { IntradayStrategyFormState } from "@/components/trading/strategies/types";
 
@@ -9,6 +10,8 @@ type IntradayStrategyFormProps = {
   onChange: (next: IntradayStrategyFormState) => void;
   onRun: () => Promise<void>;
   sideOptions: string[];
+  isRunning?: boolean;
+  showRunButton?: boolean;
 };
 
 export function IntradayStrategyForm({
@@ -16,6 +19,8 @@ export function IntradayStrategyForm({
   onChange,
   onRun,
   sideOptions,
+  isRunning = false,
+  showRunButton = true,
 }: IntradayStrategyFormProps) {
   return (
     <div className="grid gap-3 md:grid-cols-8">
@@ -55,9 +60,14 @@ export function IntradayStrategyForm({
         value={value.entry_size_usdt}
         onChange={(next) => onChange({ ...value, entry_size_usdt: next })}
       />
-      <div className="flex items-end">
-        <Button onClick={() => void onRun()}>Run Momentum</Button>
-      </div>
+      {showRunButton ? (
+        <div className="flex items-end">
+          <Button onClick={() => void onRun()} disabled={isRunning}>
+            {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isRunning ? "Running..." : "Run Momentum"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

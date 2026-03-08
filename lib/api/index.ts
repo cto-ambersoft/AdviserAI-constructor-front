@@ -10,6 +10,7 @@ export * from "@/lib/api/services/backtest";
 export * from "@/lib/api/services/exchange";
 export * from "@/lib/api/services/exchange-accounts";
 export * from "@/lib/api/services/health";
+export * from "@/lib/api/services/live-paper";
 export * from "@/lib/api/services/live-signals";
 export * from "@/lib/api/services/market";
 export * from "@/lib/api/services/spot-trading";

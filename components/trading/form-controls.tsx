@@ -1,10 +1,10 @@
 "use client";
 
 export const INPUT_CLASS =
-  "h-9 w-full rounded-md border border-input/80 bg-background/70 px-3 text-sm text-foreground shadow-xs outline-none transition-colors placeholder:text-muted-foreground/90 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-60";
+  "h-9 w-full rounded-sm border border-input/90 bg-background/75 px-2.5 font-mono text-sm text-foreground outline-none transition-colors duration-75 placeholder:text-muted-foreground/90 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-60";
 
 export function Label({ text }: { text: string }) {
-  return <p className="text-sm font-medium">{text}</p>;
+  return <p className="text-[11px] font-medium tracking-[0.05em] uppercase text-muted-foreground">{text}</p>;
 }
 
 export function TextField({

@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { NumericField } from "@/components/trading/form-controls";
 import type { GridStrategyFormState } from "@/components/trading/strategies/types";
 
@@ -8,9 +9,17 @@ type GridStrategyFormProps = {
   value: GridStrategyFormState;
   onChange: (next: GridStrategyFormState) => void;
   onRun: () => Promise<void>;
+  isRunning?: boolean;
+  showRunButton?: boolean;
 };
 
-export function GridStrategyForm({ value, onChange, onRun }: GridStrategyFormProps) {
+export function GridStrategyForm({
+  value,
+  onChange,
+  onRun,
+  isRunning = false,
+  showRunButton = true,
+}: GridStrategyFormProps) {
   return (
     <div className="grid gap-3 md:grid-cols-8">
       <NumericField
@@ -58,9 +67,14 @@ export function GridStrategyForm({ value, onChange, onRun }: GridStrategyFormPro
         />
         Close EOD
       </label>
-      <div className="flex items-end">
-        <Button onClick={() => void onRun()}>Run Grid</Button>
-      </div>
+      {showRunButton ? (
+        <div className="flex items-end">
+          <Button onClick={() => void onRun()} disabled={isRunning}>
+            {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isRunning ? "Running..." : "Run Grid"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

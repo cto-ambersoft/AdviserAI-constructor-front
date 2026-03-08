@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { Field, NumericField } from "@/components/trading/form-controls";
 import type { KnifeStrategyFormState } from "@/components/trading/strategies/types";
 
@@ -11,6 +12,8 @@ type KnifeStrategyFormProps = {
   sideOptions: string[];
   entryModeLongOptions: string[];
   entryModeShortOptions: string[];
+  isRunning?: boolean;
+  showRunButton?: boolean;
 };
 
 export function KnifeStrategyForm({
@@ -20,6 +23,8 @@ export function KnifeStrategyForm({
   sideOptions,
   entryModeLongOptions,
   entryModeShortOptions,
+  isRunning = false,
+  showRunButton = true,
 }: KnifeStrategyFormProps) {
   return (
     <>
@@ -62,9 +67,14 @@ export function KnifeStrategyForm({
           value={value.sl_pct}
           onChange={(next) => onChange({ ...value, sl_pct: next })}
         />
-        <div className="flex items-end">
-          <Button onClick={() => void onRun()}>Run Knife</Button>
-        </div>
+        {showRunButton ? (
+          <div className="flex items-end">
+            <Button onClick={() => void onRun()} disabled={isRunning}>
+              {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+              {isRunning ? "Running..." : "Run Knife"}
+            </Button>
+          </div>
+        ) : null}
       </div>
 
       <div className="grid gap-3 md:grid-cols-6">
@@ -72,6 +82,11 @@ export function KnifeStrategyForm({
           label="Trades Limit"
           value={value.trades_limit}
           onChange={(next) => onChange({ ...value, trades_limit: next })}
+        />
+        <NumericField
+          label="Account Balance"
+          value={value.account_balance}
+          onChange={(next) => onChange({ ...value, account_balance: next })}
         />
         <NumericField
           label="Max Range %"

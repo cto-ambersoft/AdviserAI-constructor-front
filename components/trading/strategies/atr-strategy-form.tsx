@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { Loader2 } from "lucide-react";
 import { NumericField } from "@/components/trading/form-controls";
 import type { AtrStrategyFormState } from "@/components/trading/strategies/types";
 
@@ -8,9 +9,17 @@ type AtrStrategyFormProps = {
   value: AtrStrategyFormState;
   onChange: (next: AtrStrategyFormState) => void;
   onRun: () => Promise<void>;
+  isRunning?: boolean;
+  showRunButton?: boolean;
 };
 
-export function AtrStrategyForm({ value, onChange, onRun }: AtrStrategyFormProps) {
+export function AtrStrategyForm({
+  value,
+  onChange,
+  onRun,
+  isRunning = false,
+  showRunButton = true,
+}: AtrStrategyFormProps) {
   return (
     <div className="grid gap-3 md:grid-cols-7">
       <NumericField
@@ -46,9 +55,14 @@ export function AtrStrategyForm({ value, onChange, onRun }: AtrStrategyFormProps
         />
         One trade per OB
       </label>
-      <div className="flex items-end">
-        <Button onClick={() => void onRun()}>Run ATR OB</Button>
-      </div>
+      {showRunButton ? (
+        <div className="flex items-end">
+          <Button onClick={() => void onRun()} disabled={isRunning}>
+            {isRunning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+            {isRunning ? "Running..." : "Run ATR OB"}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

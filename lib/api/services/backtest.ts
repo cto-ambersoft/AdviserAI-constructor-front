@@ -5,7 +5,6 @@ import type {
   BacktestResponse,
   GridBotRequest,
   IntradayMomentumRequest,
-  JsonRecord,
   KnifeCatcherRequest,
   PortfolioBacktestRequest,
   VwapBacktestRequest,
@@ -63,7 +62,7 @@ export async function runIntradayMomentumBacktest(payload: IntradayMomentumReque
 }
 
 export async function runPortfolioBacktest(payload: PortfolioBacktestRequest) {
-  return apiRequest<JsonRecord>("/api/v1/backtest/portfolio", {
+  return apiRequest<BacktestResponse>("/api/v1/backtest/portfolio", {
     method: "POST",
     body: payload,
   });

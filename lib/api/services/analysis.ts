@@ -1,5 +1,16 @@
 import { apiRequest } from "@/lib/api/client";
-import type { AnalysisRunsResponse, TriggerAnalysisNowResponse } from "@/lib/api/types";
+import type {
+  AnalysisRunsResponse,
+  PersonalAnalysisDefaultsRead,
+  PersonalAnalysisHistoryRead,
+  PersonalAnalysisJobRead,
+  PersonalAnalysisManualTriggerRequest,
+  PersonalAnalysisManualTriggerResponse,
+  PersonalAnalysisProfileCreate,
+  PersonalAnalysisProfileRead,
+  PersonalAnalysisProfileUpdate,
+  TriggerAnalysisNowResponse,
+} from "@/lib/api/types";
 
 export async function triggerAnalysisNow() {
   return apiRequest<TriggerAnalysisNowResponse>("/api/v1/analysis/trigger-now", {
@@ -12,6 +23,87 @@ export async function listAnalysisRuns(params?: { date?: string; limit?: number 
     query: {
       date: params?.date,
       limit: params?.limit,
+    },
+  });
+}
+
+export async function getPersonalAnalysisDefaults() {
+  return apiRequest<PersonalAnalysisDefaultsRead>("/api/v1/analysis/personal/defaults");
+}
+
+export async function listPersonalAnalysisProfiles() {
+  return apiRequest<PersonalAnalysisProfileRead[]>("/api/v1/analysis/personal/profiles");
+}
+
+export async function createPersonalAnalysisProfile(
+  payload: PersonalAnalysisProfileCreate,
+) {
+  return apiRequest<PersonalAnalysisProfileRead>("/api/v1/analysis/personal/profiles", {
+    method: "POST",
+    body: payload,
+  });
+}
+
+export async function updatePersonalAnalysisProfile(
+  profileId: number,
+  payload: PersonalAnalysisProfileUpdate,
+) {
+  return apiRequest<PersonalAnalysisProfileRead>(
+    `/api/v1/analysis/personal/profiles/${profileId}`,
+    {
+      method: "PUT",
+      body: payload,
+    },
+  );
+}
+
+export async function deletePersonalAnalysisProfile(profileId: number) {
+  return apiRequest<void>(`/api/v1/analysis/personal/profiles/${profileId}`, {
+    method: "DELETE",
+  });
+}
+
+export async function triggerPersonalAnalysisProfile(
+  profileId: number,
+  payload: PersonalAnalysisManualTriggerRequest = {},
+) {
+  return apiRequest<PersonalAnalysisManualTriggerResponse>(
+    `/api/v1/analysis/personal/profiles/${profileId}/trigger`,
+    {
+      method: "POST",
+      body: payload,
+    },
+  );
+}
+
+export async function getPersonalAnalysisJob(tradeJobId: string) {
+  return apiRequest<PersonalAnalysisJobRead>(
+    `/api/v1/analysis/personal/jobs/${encodeURIComponent(tradeJobId)}`,
+  );
+}
+
+export async function listPersonalAnalysisHistory(params: {
+  profileId?: number;
+  limit?: number;
+  before?: string;
+}) {
+  return apiRequest<PersonalAnalysisHistoryRead[]>("/api/v1/analysis/personal/history", {
+    query: {
+      profile_id: params.profileId,
+      limit: params.limit,
+      before: params.before,
+    },
+  });
+}
+
+export async function getPersonalAnalysisLatest(params: {
+  profileId?: number;
+  symbol?: string;
+}) {
+  return apiRequest<PersonalAnalysisHistoryRead>("/api/v1/analysis/personal/latest", {
+    query: {
+      profile_id: params.profileId,
+      symbol: params.symbol,
     },
   });
 }

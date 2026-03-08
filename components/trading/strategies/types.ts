@@ -10,6 +10,7 @@ export type AtrStrategyFormState = {
 export type KnifeStrategyFormState = {
   include_series: boolean;
   trades_limit: number;
+  account_balance: number;
   side: string;
   entry_mode_long: string;
   entry_mode_short: string;

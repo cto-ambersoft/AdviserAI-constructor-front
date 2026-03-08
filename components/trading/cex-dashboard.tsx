@@ -59,9 +59,9 @@ import { mapMarketRowsToCandles } from "@/lib/trading/mappers";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTradingStore } from "@/providers/trading-store-provider";
 
-const CARD_CLASS = "border-border/80 bg-card/80 shadow-sm backdrop-blur";
+const CARD_CLASS = "border-border/90 bg-card/90 shadow-none";
 const ORDER_PANEL_INPUT_CLASS =
-  "h-8 w-full rounded-md border border-input/80 bg-background/70 px-2.5 text-sm text-foreground shadow-xs outline-none transition-colors placeholder:text-muted-foreground/90 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-60";
+  "h-8 w-full rounded-sm border border-input/90 bg-background/75 px-2.5 font-mono text-sm text-foreground outline-none transition-colors duration-75 placeholder:text-muted-foreground/90 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-60";
 
 type SpotWidgetState = {
   openOrders: NormalizedOrder[];
@@ -269,26 +269,58 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [nextMarketMeta, nextAccountsMeta, nextAccounts, analysisResponse] =
-        await Promise.all([
+      const [marketMetaResult, accountsMetaResult, accountsResult, analysisResult] =
+        await Promise.allSettled([
           getMarketMeta(),
           getExchangeAccountsMeta(),
           listExchangeAccounts(),
           listAnalysisRuns({ limit: 1 }),
         ]);
-      setMarketMeta(nextMarketMeta);
-      setAccountsMeta(nextAccountsMeta);
-      setAccounts(nextAccounts);
-      setLatestAnalysisRun(analysisResponse.runs?.[0] ?? null);
-      if (nextAccounts.length > 0 && !selectedAccountId) {
-        setSelectedAccountId(nextAccounts[0].id);
+
+      if (marketMetaResult.status === "fulfilled") {
+        const nextMarketMeta = marketMetaResult.value;
+        setMarketMeta(nextMarketMeta);
+        if (nextMarketMeta.default_symbol && !symbol) {
+          setSymbol(nextMarketMeta.default_symbol);
+        }
       }
-      if (nextMarketMeta.default_symbol && !symbol) {
-        setSymbol(nextMarketMeta.default_symbol);
+
+      if (accountsMetaResult.status === "fulfilled") {
+        setAccountsMeta(accountsMetaResult.value);
+      }
+
+      if (accountsResult.status === "fulfilled") {
+        const nextAccounts = accountsResult.value;
+        setAccounts(nextAccounts);
+        if (nextAccounts.length > 0) {
+          setSelectedAccountId((prev) => prev ?? nextAccounts[0].id);
+        }
+      }
+
+      if (analysisResult.status === "fulfilled") {
+        setLatestAnalysisRun(analysisResult.value.runs?.[0] ?? null);
+      } else {
+        setLatestAnalysisRun(null);
+      }
+
+      const criticalErrors: unknown[] = [];
+      if (marketMetaResult.status === "rejected") {
+        criticalErrors.push(marketMetaResult.reason);
+      }
+      if (accountsMetaResult.status === "rejected") {
+        criticalErrors.push(accountsMetaResult.reason);
+      }
+      if (accountsResult.status === "rejected") {
+        criticalErrors.push(accountsResult.reason);
+      }
+      if (criticalErrors.length > 0) {
+        setErrorMessage(
+          toUserErrorMessage(criticalErrors[0], "Failed to load metadata"),
+        );
       }
     } catch (error) {
       setErrorMessage(
-        error instanceof Error ? error.message : "Failed to load metadata",
+        toUserErrorMessage(error, "Failed to load metadata"),
       );
     } finally {
       setIsLoading(false);
@@ -487,17 +519,37 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
 
       isSpotRefreshInFlightRef.current = true;
       try {
-        const openOrders = await getOpenSpotOrders({
-          account_id: accountId,
-          symbol,
-          limit: 100,
-        });
-        setSpotWidgets((prev) => ({ ...prev, openOrders: openOrders.orders }));
+        const widgetErrors: unknown[] = [];
+        const [openOrders] = await Promise.allSettled([
+          getOpenSpotOrders({
+            account_id: accountId,
+            symbol,
+            limit: 100,
+          }),
+        ]);
+        if (openOrders.status === "fulfilled") {
+          setSpotWidgets((prev) => ({ ...prev, openOrders: openOrders.value.orders }));
+        } else {
+          widgetErrors.push(openOrders.reason);
+        }
 
         const shouldRefreshSlow =
           force || now - lastSpotSlowRefreshAtRef.current >= 30_000;
         if (!shouldRefreshSlow) {
-          spotBackoffMsRef.current = 0;
+          const hasBackoffError = widgetErrors.some((error) =>
+            applySpotBackoff(error),
+          );
+          if (!hasBackoffError) {
+            spotBackoffMsRef.current = 0;
+            if (widgetErrors.length > 0) {
+              setErrorMessage(
+                toUserErrorMessage(
+                  widgetErrors[0],
+                  "Failed to refresh trading widgets",
+                ),
+              );
+            }
+          }
           return;
         }
 
@@ -538,11 +590,20 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
             (item): item is PromiseRejectedResult => item.status === "rejected",
           )
           .map((item) => item.reason);
-        const hasBackoffError = slowErrors.some((error) =>
+        const allErrors = [...widgetErrors, ...slowErrors];
+        const hasBackoffError = allErrors.some((error) =>
           applySpotBackoff(error),
         );
         if (!hasBackoffError) {
           spotBackoffMsRef.current = 0;
+          if (allErrors.length > 0) {
+            setErrorMessage(
+              toUserErrorMessage(
+                allErrors[0],
+                "Failed to refresh trading widgets",
+              ),
+            );
+          }
         }
         lastSpotSlowRefreshAtRef.current = Date.now();
       } catch (error) {
@@ -562,7 +623,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
         }
       }
     },
-    [applySpotBackoff, symbol],
+    [applySpotBackoff, symbol, toUserErrorMessage],
   );
 
   const triggerImmediateTradingRefresh = useCallback(
@@ -802,30 +863,30 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[1600px] p-4 md:p-6">
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2">
-          <Badge variant="outline">{user?.email ?? "anonymous"}</Badge>
-          <Badge
-            variant={isLoading || hasPendingActions ? "outline" : "default"}
-          >
-            {isLoading || hasPendingActions ? "Loading..." : "Ready"}
-          </Badge>
-          <Badge
-            variant={selectedMode === "real" ? "destructive" : "secondary"}
-          >
-            {selectedMode}
-          </Badge>
-        </div>
-        <div className="flex items-center gap-2">
-          <LoadingButton
-            variant="outline"
-            onClick={() => void refreshAll()}
-            isLoading={isActionPending("refresh-all")}
-            loadingText="Refreshing..."
-          >
-            Refresh
-          </LoadingButton>
-          {!isTradeMode ? (
+      {!isTradeMode ? (
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <Badge variant="outline">{user?.email ?? "anonymous"}</Badge>
+            <Badge
+              variant={isLoading || hasPendingActions ? "outline" : "default"}
+            >
+              {isLoading || hasPendingActions ? "Loading..." : "Ready"}
+            </Badge>
+            <Badge
+              variant={selectedMode === "real" ? "destructive" : "secondary"}
+            >
+              {selectedMode}
+            </Badge>
+          </div>
+          <div className="flex items-center gap-2">
+            <LoadingButton
+              variant="outline"
+              onClick={() => void refreshAll()}
+              isLoading={isActionPending("refresh-all")}
+              loadingText="Refreshing..."
+            >
+              Refresh
+            </LoadingButton>
             <Button
               variant="outline"
               onClick={() => {
@@ -835,9 +896,9 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
             >
               Logout
             </Button>
-          ) : null}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {errorMessage ? (
         <p className="mb-3 rounded-md border border-destructive/35 bg-destructive/12 px-3 py-2 text-sm text-destructive">
@@ -1263,7 +1324,12 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
                               ? "default"
                               : "ghost"
                           }
-                          onClick={() => setActiveActivityTab(tab.value)}
+                          onClick={() => {
+                            setActiveActivityTab(tab.value);
+                            if (selectedAccountId) {
+                              void loadSpotWidgets(selectedAccountId, true);
+                            }
+                          }}
                         >
                           {tab.label}
                         </Button>
