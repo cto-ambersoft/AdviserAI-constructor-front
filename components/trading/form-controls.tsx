@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect, useMemo, useState } from "react";
+
 export const INPUT_CLASS =
   "h-9 w-full rounded-sm border border-input/90 bg-background/75 px-2.5 font-mono text-sm text-foreground outline-none transition-colors duration-75 placeholder:text-muted-foreground/90 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/35 disabled:cursor-not-allowed disabled:opacity-60";
 
@@ -28,6 +30,7 @@ export function NumericField({
   label,
   value,
   onChange,
+  onInputValueChange,
   min,
   max,
   step,
@@ -35,21 +38,52 @@ export function NumericField({
   label: string;
   value: number;
   onChange: (value: number) => void;
+  onInputValueChange?: (rawValue: string) => void;
   min?: number;
   max?: number;
   step?: number;
 }) {
+  const [inputValue, setInputValue] = useState(String(value));
+  const normalizedPropValue = useMemo(() => String(value), [value]);
+
+  useEffect(() => {
+    setInputValue(normalizedPropValue);
+  }, [normalizedPropValue]);
+
+  const commitValue = (rawValue: string) => {
+    const normalized = rawValue.trim().replace(",", ".");
+    if (!normalized) {
+      return;
+    }
+    const parsed = Number(normalized);
+    if (!Number.isFinite(parsed)) {
+      return;
+    }
+    onChange(parsed);
+  };
+
   return (
     <div className="space-y-1">
       <Label text={label} />
       <input
         className={INPUT_CLASS}
         type="number"
-        value={value}
+        value={inputValue}
         min={min}
         max={max}
         step={step}
-        onChange={(event) => onChange(Number(event.target.value))}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+          setInputValue(nextValue);
+          onInputValueChange?.(nextValue);
+          commitValue(nextValue);
+        }}
+        onBlur={() => {
+          commitValue(inputValue);
+          if (!inputValue.trim() || !Number.isFinite(Number(inputValue.replace(",", ".")))) {
+            setInputValue(normalizedPropValue);
+          }
+        }}
       />
     </div>
   );

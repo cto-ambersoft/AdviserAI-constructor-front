@@ -135,6 +135,7 @@ import {
   calculatePosition,
   type TradeParams,
 } from "@/lib/trading/risk-calculator";
+import { notifyError, notifySuccess } from "@/lib/notifications";
 import {
   DASHBOARD_TABS,
   TIMEFRAMES,
@@ -185,6 +186,7 @@ type LivePaperSessionStats = {
 type LivePaperBuiltinPayloadInput = {
   key: BuiltInStrategyKey;
   strategyVersion: string;
+  exchange_name: string;
   symbol: string;
   timeframe: string;
   bars: number;
@@ -324,6 +326,7 @@ function mapLivePaperTradesToMarkers(trades: LivePaperTradeRead[]) {
 function buildLivePaperBuiltinStrategyPayload({
   key,
   strategyVersion,
+  exchange_name,
   symbol,
   timeframe,
   bars,
@@ -346,6 +349,7 @@ function buildLivePaperBuiltinStrategyPayload({
         strategy_type: "atr_order_block",
         config: {
           ...atrForm,
+          exchange_name,
           symbol,
           timeframe,
           bars,
@@ -365,6 +369,7 @@ function buildLivePaperBuiltinStrategyPayload({
         strategy_type: "knife_catcher",
         config: {
           ...knifeForm,
+          exchange_name,
           symbol,
           timeframe,
           bars,
@@ -379,6 +384,7 @@ function buildLivePaperBuiltinStrategyPayload({
         strategy_type: "grid_bot",
         config: {
           ...gridForm,
+          exchange_name,
           symbol,
           timeframe,
           bars,
@@ -393,6 +399,7 @@ function buildLivePaperBuiltinStrategyPayload({
         strategy_type: "intraday_momentum",
         config: {
           ...intradayForm,
+          exchange_name,
           symbol,
           timeframe,
           bars,
@@ -535,11 +542,13 @@ export function TradingDashboard() {
   const setLoading = useTradingStore((state) => state.setLoading);
 
   const [marketMeta, setMarketMeta] = useState<{
+    defaultExchangeName: string;
     symbols: string[];
     timeframes: string[];
     minBars: number;
     maxBars: number;
   } | null>(null);
+  const [marketExchangeName, setMarketExchangeName] = useState("bybit");
   const [exchangeAccounts, setExchangeAccounts] = useState<
     ExchangeAccountRead[]
   >([]);
@@ -548,6 +557,7 @@ export function TradingDashboard() {
   const [auditMeta, setAuditMeta] = useState<AuditMetaResponse | null>(null);
   const [auditEvents, setAuditEvents] = useState<AuditLogRead[]>([]);
   const [candles, setCandles] = useState<CandlePoint[]>([]);
+  const [isChartLoading, setIsChartLoading] = useState(false);
   const [overlays, setOverlays] = useState<OverlayLine[]>([]);
   const [chartMarkers, setChartMarkers] = useState<
     ReturnType<typeof mapBacktestToMarkers>
@@ -565,8 +575,20 @@ export function TradingDashboard() {
   const [vwapIndicatorOptions, setVwapIndicatorOptions] = useState<string[]>(
     [],
   );
-  const [errorMessage, setErrorMessage] = useState("");
-  const [infoMessage, setInfoMessage] = useState("");
+  const setErrorMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifyError(normalized);
+  }, []);
+  const setInfoMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifySuccess(normalized);
+  }, []);
   const [selectedStrategyId, setSelectedStrategyId] = useState<number | null>(
     null,
   );
@@ -594,6 +616,7 @@ export function TradingDashboard() {
   const [activeLiveStrategy, setActiveLiveStrategy] =
     useState<LiveStrategyKey>("builder");
   const [liveBuilderForm, setLiveBuilderForm] = useState<BuilderSignalRequest>({
+    exchange_name: marketExchangeName,
     symbol: "BTC/USDT",
     timeframe: "1h",
     bars: 500,
@@ -613,6 +636,7 @@ export function TradingDashboard() {
     ob_lookback: 120,
   });
   const [liveAtrObForm] = useState<AtrObSignalRequest>({
+    exchange_name: marketExchangeName,
     symbol: "BTC/USDT",
     timeframe: "1h",
     bars: 500,
@@ -701,6 +725,7 @@ export function TradingDashboard() {
   const [selectedPersonalProfileId, setSelectedPersonalProfileId] = useState<
     number | null
   >(null);
+  const [isCreatingPersonalProfile, setIsCreatingPersonalProfile] = useState(false);
   const [personalProfileForm, setPersonalProfileForm] =
     useState<PersonalProfileFormState>(createEmptyPersonalProfileForm(symbol));
   const [personalHistory, setPersonalHistory] = useState<
@@ -717,6 +742,8 @@ export function TradingDashboard() {
     useState(false);
   const [isPersonalHistoryLoading, setIsPersonalHistoryLoading] =
     useState(false);
+  const [hasPersonalDataBootstrapped, setHasPersonalDataBootstrapped] =
+    useState(false);
   const [personalPollingJobId, setPersonalPollingJobId] = useState<
     string | null
   >(null);
@@ -724,6 +751,7 @@ export function TradingDashboard() {
     useState<PersonalAnalysisJobRead | null>(null);
 
   const [builderForm, setBuilderForm] = useState<VwapBacktestRequest>({
+    exchange_name: marketExchangeName,
     symbol: "BTC/USDT",
     timeframe: "1h",
     bars: 500,
@@ -862,10 +890,18 @@ export function TradingDashboard() {
           listAuditEvents(auditLimit),
         ]);
         setMarketMeta({
+          defaultExchangeName: marketMetaData.default_exchange_name,
           symbols: [marketMetaData.default_symbol],
           timeframes: marketMetaData.common_timeframes,
           minBars: marketMetaData.min_bars,
           maxBars: marketMetaData.max_bars,
+        });
+        setMarketExchangeName((current) => {
+          const normalizedCurrent = current.trim().toLowerCase();
+          if (normalizedCurrent && normalizedCurrent !== "bybit") {
+            return current;
+          }
+          return marketMetaData.default_exchange_name;
         });
         setStrategyMeta(strategiesMetaData);
         setCatalog(backtestCatalog);
@@ -883,10 +919,10 @@ export function TradingDashboard() {
         try {
           const [analysisRunsData, personalDefaultsData, personalProfilesData] =
             await Promise.all([
-              listAnalysisRuns({ limit: 50 }),
-              getPersonalAnalysisDefaults(),
-              listPersonalAnalysisProfiles(),
-            ]);
+            listAnalysisRuns({ limit: 50 }),
+            getPersonalAnalysisDefaults(),
+            listPersonalAnalysisProfiles(),
+          ]);
           const initialRuns = analysisRunsData.runs ?? [];
           setAnalysisRuns(initialRuns);
           setLatestAnalysisRun(initialRuns[0] ?? null);
@@ -899,6 +935,8 @@ export function TradingDashboard() {
           setPersonalDefaults(null);
           setPersonalProfiles([]);
           setInfoMessage("Analysis backend is unavailable.");
+        } finally {
+          setHasPersonalDataBootstrapped(true);
         }
       } catch (error) {
         setErrorMessage(
@@ -911,14 +949,16 @@ export function TradingDashboard() {
     };
 
     void init();
-  }, [auditLimit, setLoading]);
+  }, [auditLimit, setErrorMessage, setInfoMessage, setLoading]);
 
   useEffect(() => {
     const loadMarket = async () => {
       setLoading(true);
+      setIsChartLoading(true);
       setErrorMessage("");
       try {
         const response = await getMarketOhlcv({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -936,11 +976,20 @@ export function TradingDashboard() {
         );
       } finally {
         setLoading(false);
+        setIsChartLoading(false);
       }
     };
 
     void loadMarket();
-  }, [bars, setLastPrice, setLoading, symbol, timeframe]);
+  }, [
+    bars,
+    marketExchangeName,
+    setErrorMessage,
+    setLastPrice,
+    setLoading,
+    symbol,
+    timeframe,
+  ]);
 
   useEffect(() => {
     if (!analysisRuns.length) {
@@ -964,6 +1013,9 @@ export function TradingDashboard() {
       setSelectedPersonalProfileId(null);
       return;
     }
+    if (isCreatingPersonalProfile) {
+      return;
+    }
     if (!selectedPersonalProfileId) {
       setSelectedPersonalProfileId(personalProfiles[0].id);
       return;
@@ -974,25 +1026,40 @@ export function TradingDashboard() {
     if (!stillExists) {
       setSelectedPersonalProfileId(personalProfiles[0].id);
     }
-  }, [personalProfiles, selectedPersonalProfileId]);
+  }, [isCreatingPersonalProfile, personalProfiles, selectedPersonalProfileId]);
 
   useEffect(() => {
+    if (isCreatingPersonalProfile) {
+      setPersonalProfileForm(toPersonalProfileForm(personalDefaults, null, symbol));
+      return;
+    }
     const profile = selectedPersonalProfileId
       ? personalProfiles.find((item) => item.id === selectedPersonalProfileId) ??
         null
       : personalProfiles[0] ?? null;
     if (!profile) {
-      setPersonalProfileForm((current) =>
-        current.id === null && current.symbol === symbol
-          ? current
-          : createEmptyPersonalProfileForm(symbol),
-      );
+      setPersonalProfileForm((current) => {
+        const next = toPersonalProfileForm(personalDefaults, null, symbol);
+        const hasCurrentAgentConfig =
+          Object.keys(current.agents).length > 0 ||
+          Object.keys(current.agentWeights).length > 0;
+        if (current.id === null && current.symbol === symbol && hasCurrentAgentConfig) {
+          return current;
+        }
+        return next;
+      });
       return;
     }
     setPersonalProfileForm(
       toPersonalProfileForm(personalDefaults, profile, symbol),
     );
-  }, [personalDefaults, personalProfiles, selectedPersonalProfileId, symbol]);
+  }, [
+    isCreatingPersonalProfile,
+    personalDefaults,
+    personalProfiles,
+    selectedPersonalProfileId,
+    symbol,
+  ]);
 
   const kpiRows = useMemo(() => {
     return toKpiRows(latestBacktest?.summary as JsonRecord | undefined);
@@ -1021,6 +1088,9 @@ export function TradingDashboard() {
   }, [analysisRuns, selectedAnalysisId]);
 
   const selectedPersonalProfile = useMemo(() => {
+    if (isCreatingPersonalProfile) {
+      return null;
+    }
     if (!selectedPersonalProfileId) {
       return personalProfiles[0] ?? null;
     }
@@ -1029,7 +1099,7 @@ export function TradingDashboard() {
       personalProfiles[0] ??
       null
     );
-  }, [personalProfiles, selectedPersonalProfileId]);
+  }, [isCreatingPersonalProfile, personalProfiles, selectedPersonalProfileId]);
 
   const availablePersonalAgents = useMemo(() => {
     const defaults = personalDefaults?.available_agents ?? [];
@@ -1092,6 +1162,27 @@ export function TradingDashboard() {
     }
     return map;
   }, [strategyList]);
+  const availableExchangeNames = useMemo(() => {
+    const options = new Set<string>();
+    if (marketMeta?.defaultExchangeName) {
+      options.add(marketMeta.defaultExchangeName);
+    }
+    for (const account of exchangeAccounts) {
+      const exchangeName = account.exchange_name.trim();
+      if (exchangeName) {
+        options.add(exchangeName);
+      }
+    }
+    const current = marketExchangeName.trim();
+    if (current) {
+      options.add(current);
+    }
+    return Array.from(options);
+  }, [
+    exchangeAccounts,
+    marketExchangeName,
+    marketMeta?.defaultExchangeName,
+  ]);
 
   const builtInStrategyItems = useMemo(() => {
     const labels = catalog?.portfolio.builtin_strategies ?? [];
@@ -1199,6 +1290,7 @@ export function TradingDashboard() {
       const payload = buildLivePaperBuiltinStrategyPayload({
         key: livePaperBuiltInStrategyKey,
         strategyVersion: strategyMeta?.default_version ?? "1.0.0",
+        exchange_name: marketExchangeName,
         symbol,
         timeframe,
         bars,
@@ -1249,6 +1341,7 @@ export function TradingDashboard() {
     gridForm,
     intradayForm,
     knifeForm,
+    marketExchangeName,
     livePaperBuiltinStrategyId,
     livePaperBuiltInStrategyKey,
     livePaperSource,
@@ -1295,6 +1388,7 @@ export function TradingDashboard() {
         target_type: "strategy",
         target_id: label,
         payload: {
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1329,6 +1423,7 @@ export function TradingDashboard() {
           is_active: true,
           config: {
             ...builderForm,
+            exchange_name: marketExchangeName,
             symbol,
             timeframe,
             bars,
@@ -1372,6 +1467,7 @@ export function TradingDashboard() {
       async () => {
         const config = (saved.config ?? {}) as Partial<VwapBacktestRequest>;
         return runVwapBacktest({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1521,6 +1617,7 @@ export function TradingDashboard() {
           target_type: "portfolio",
           target_id: "portfolio",
           payload: {
+            exchange_name: marketExchangeName,
             user_strategies: selectedUserStrategies.map((item) => item.id),
             builtin_strategies: selectedBuiltinStrategies,
             total_capital: portfolioCapital,
@@ -1542,6 +1639,7 @@ export function TradingDashboard() {
       () =>
         runVwapBacktest({
           ...builderForm,
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1556,6 +1654,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runAtrOrderBlockBacktest({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1577,6 +1676,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runKnifeCatcherBacktest({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1591,6 +1691,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runGridBotBacktest({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1607,6 +1708,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runIntradayMomentumBacktest({
+          exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
@@ -1650,6 +1752,7 @@ export function TradingDashboard() {
             ? await runAtrObLiveSignal({
                 signal: {
                   ...liveAtrObForm,
+                  exchange_name: marketExchangeName,
                   symbol,
                   timeframe,
                   bars,
@@ -1659,6 +1762,7 @@ export function TradingDashboard() {
             : await runBuilderLiveSignal({
                 signal: {
                   ...liveBuilderForm,
+                  exchange_name: marketExchangeName,
                   symbol,
                   timeframe,
                   bars,
@@ -1692,6 +1796,7 @@ export function TradingDashboard() {
       const builtInPayload = buildLivePaperBuiltinStrategyPayload({
         key: livePaperBuiltInStrategyKey,
         strategyVersion: strategyMeta?.default_version ?? "1.0.0",
+        exchange_name: marketExchangeName,
         symbol,
         timeframe,
         bars,
@@ -1730,6 +1835,7 @@ export function TradingDashboard() {
     gridForm,
     intradayForm,
     knifeForm,
+    marketExchangeName,
     livePaperBuiltInStrategyKey,
     livePaperBuiltinStrategyId,
     livePaperSource,
@@ -1801,6 +1907,10 @@ export function TradingDashboard() {
       const config = (strategy.config ?? {}) as Record<string, unknown>;
       const configWithDefaults = {
         ...config,
+        exchange_name:
+          typeof config.exchange_name === "string" && config.exchange_name.trim()
+            ? config.exchange_name
+            : marketExchangeName,
         include_series:
           typeof config.include_series === "boolean" ? config.include_series : true,
         trades_limit: Number.isFinite(Number(config.trades_limit))
@@ -1846,7 +1956,7 @@ export function TradingDashboard() {
       livePaperBacktestMarkersRef.current = mapBacktestToMarkers(result);
       applyLivePaperChartMarkers(livePaperTradesRef.current);
     },
-    [applyLivePaperChartMarkers, strategyById],
+    [applyLivePaperChartMarkers, marketExchangeName, strategyById],
   );
 
   const resetLivePaperStreamState = useCallback(() => {
@@ -2172,10 +2282,12 @@ export function TradingDashboard() {
       );
     } finally {
       setIsPersonalLoading(false);
+      setHasPersonalDataBootstrapped(true);
     }
-  }, [refreshPersonalAnalysisData]);
+  }, [refreshPersonalAnalysisData, setErrorMessage]);
 
   const resetPersonalProfileForm = () => {
+    setIsCreatingPersonalProfile(true);
     setSelectedPersonalProfileId(null);
     setPersonalProfileForm(toPersonalProfileForm(personalDefaults, null, symbol));
   };
@@ -2224,6 +2336,7 @@ export function TradingDashboard() {
         ? await updatePersonalAnalysisProfile(personalProfileForm.id, payload)
         : await createPersonalAnalysisProfile(payload);
       await refreshPersonalAnalysisData();
+      setIsCreatingPersonalProfile(false);
       setSelectedPersonalProfileId(saved.id);
       setInfoMessage(
         personalProfileForm.id
@@ -2377,21 +2490,31 @@ export function TradingDashboard() {
       window.clearInterval(intervalId);
       setIsAnalysisAutoRefreshing(false);
     };
-  }, [activeTab, analysisPollingJobId, fetchAndApplyAnalysisRuns]);
+  }, [
+    activeTab,
+    analysisPollingJobId,
+    fetchAndApplyAnalysisRuns,
+    setErrorMessage,
+    setInfoMessage,
+  ]);
 
   useEffect(() => {
-    if (activeTab !== "analysis" || analysisMode !== "personal") {
-      return;
-    }
-    if (personalDefaults && personalProfiles.length > 0) {
+    if (
+      activeTab !== "analysis" ||
+      analysisMode !== "personal" ||
+      isCreatingPersonalProfile ||
+      isPersonalLoading ||
+      hasPersonalDataBootstrapped
+    ) {
       return;
     }
     void refreshPersonalTab();
   }, [
     activeTab,
     analysisMode,
-    personalDefaults,
-    personalProfiles.length,
+    hasPersonalDataBootstrapped,
+    isCreatingPersonalProfile,
+    isPersonalLoading,
     refreshPersonalTab,
   ]);
 
@@ -2468,6 +2591,8 @@ export function TradingDashboard() {
     loadPersonalLatest,
     personalPollingJobId,
     refreshPersonalAnalysisData,
+    setErrorMessage,
+    setInfoMessage,
   ]);
 
   const activeMeta = TAB_META[activeTab];
@@ -2732,6 +2857,21 @@ export function TradingDashboard() {
             <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Market
             </p>
+            <Label text="Exchange" />
+            <select
+              className={INPUT_CLASS}
+              value={marketExchangeName}
+              onChange={(event) => setMarketExchangeName(event.target.value)}
+            >
+              {(availableExchangeNames.length
+                ? availableExchangeNames
+                : ["bybit", "binance"]
+              ).map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
             <Label text="Symbol" />
             <select
               className={INPUT_CLASS}
@@ -2877,12 +3017,20 @@ export function TradingDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="rounded-xl border border-border/70 bg-linear-to-b from-background to-muted/25 p-2 md:p-4">
+                <div className="relative rounded-xl border border-border/70 bg-linear-to-b from-background to-muted/25 p-2 md:p-4">
                   <MarketChart
                     candles={candles}
                     overlays={overlays}
                     markers={activeTab === "live" ? livePaperChartMarkers : chartMarkers}
                   />
+                  {isChartLoading && candles.length === 0 ? (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/55 backdrop-blur-[1px]">
+                      <p className="inline-flex items-center text-sm text-muted-foreground">
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading trading chart...
+                      </p>
+                    </div>
+                  ) : null}
                 </div>
                 <p className="text-xs text-muted-foreground md:text-sm">
                   Tip: switch sections on the left to run scenarios quickly and
@@ -2900,16 +3048,6 @@ export function TradingDashboard() {
               <CardDescription>{activeMeta.description}</CardDescription>
             </CardHeader>
             <CardContent className="min-w-0 space-y-4">
-              {errorMessage ? (
-                <p className="rounded-md border border-destructive/35 bg-destructive/12 px-3 py-2 text-sm text-destructive">
-                  {errorMessage}
-                </p>
-              ) : null}
-              {infoMessage ? (
-                <p className="rounded-md border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-                  {infoMessage}
-                </p>
-              ) : null}
               {activeTab === "builder" ? (
                 <BuilderTab
                   presetOptions={vwapPresetOptions}
@@ -3050,7 +3188,10 @@ export function TradingDashboard() {
                   availablePersonalAgents={availablePersonalAgents}
                   onModeChange={setAnalysisMode}
                   onRefreshPersonal={() => void refreshPersonalTab()}
-                  onSelectPersonalProfile={setSelectedPersonalProfileId}
+                  onSelectPersonalProfile={(profileId) => {
+                    setIsCreatingPersonalProfile(false);
+                    setSelectedPersonalProfileId(profileId);
+                  }}
                   onPersonalProfileFormChange={(value) =>
                     setPersonalProfileForm(value)
                   }
@@ -5115,21 +5256,27 @@ function AnalysisTab({
                         <span className="truncate">{agent}</span>
                       </label>
                       <input
-                        type="number"
-                        min={0}
-                        max={1}
-                        step={0.01}
+                        key={`${personalProfileForm.id ?? "new"}-${agent}-${personalProfileForm.agentWeights[agent] ?? 0}`}
+                        type="text"
+                        inputMode="decimal"
                         className={INPUT_CLASS}
-                        value={Number(personalProfileForm.agentWeights[agent] ?? 0)}
-                        onChange={(event) =>
+                        defaultValue={String(personalProfileForm.agentWeights[agent] ?? 0)}
+                        onBlur={(event) => {
+                          const parsed = Number(event.target.value.trim().replace(",", "."));
+                          if (!Number.isFinite(parsed)) {
+                            event.currentTarget.value = String(
+                              personalProfileForm.agentWeights[agent] ?? 0,
+                            );
+                            return;
+                          }
                           onPersonalProfileFormChange({
                             ...personalProfileForm,
                             agentWeights: {
                               ...personalProfileForm.agentWeights,
-                              [agent]: Number(event.target.value),
+                              [agent]: parsed,
                             },
-                          })
-                        }
+                          });
+                        }}
                       />
                     </div>
                   ))}

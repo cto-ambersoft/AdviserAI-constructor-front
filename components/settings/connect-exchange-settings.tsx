@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+// import Link from "next/link";
 import { useCallback, useEffect, useState, type ComponentProps } from "react";
 import { Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { INPUT_CLASS, Label } from "@/components/trading/form-controls";
+import { notifyError, notifySuccess } from "@/lib/notifications";
 import {
   ApiError,
   createExchangeAccount,
@@ -30,9 +31,23 @@ export function ConnectExchangeSettings() {
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editMode, setEditMode] = useState<"demo" | "real">("demo");
-  const [message, setMessage] = useState("");
-  const [errorMessage, setErrorMessage] = useState("");
   const [pendingByAction, setPendingByAction] = useState<Record<string, boolean>>({});
+
+  const setMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifySuccess(normalized);
+  }, []);
+
+  const setErrorMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifyError(normalized);
+  }, []);
 
   const setActionPending = useCallback((actionKey: string, value: boolean) => {
     setPendingByAction((prev) => ({ ...prev, [actionKey]: value }));
@@ -70,7 +85,7 @@ export function ConnectExchangeSettings() {
         setErrorMessage(toUserErrorMessage(error, "Failed to load exchange accounts"));
       }
     })();
-  }, []);
+  }, [setErrorMessage]);
 
   const handleCreateAccount = async (formData: FormData) => {
     const mode = (formData.get("mode")?.toString() ?? "demo") as "demo" | "real";
@@ -111,17 +126,6 @@ export function ConnectExchangeSettings() {
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-[1100px] p-4 md:p-6">
-      {errorMessage ? (
-        <p className="mb-3 rounded-md border border-destructive/35 bg-destructive/12 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-      {message ? (
-        <p className="mb-3 rounded-md border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-          {message}
-        </p>
-      ) : null}
-
       <Card className={CARD_CLASS}>
         <CardHeader>
           <CardTitle>Connect Exchange</CardTitle>
@@ -309,14 +313,14 @@ export function ConnectExchangeSettings() {
 
           <Separator />
 
-          <div className="flex items-center justify-between gap-3 rounded-md border p-3">
+          {/* <div className="flex items-center justify-between gap-3 rounded-md border p-3">
             <p className="text-sm text-muted-foreground">
               After connecting an exchange, move to the trading page to place orders.
             </p>
             <Button asChild>
               <Link href="/trade">Go to Trade</Link>
             </Button>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
     </main>

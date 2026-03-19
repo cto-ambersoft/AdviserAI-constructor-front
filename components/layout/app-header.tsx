@@ -11,7 +11,8 @@ import { useAuthStore } from "@/stores/auth-store";
 
 const NAV_LINKS = [
   { href: "/strategy", label: "Strategy" },
-  { href: "/trade", label: "Trade" },
+  // { href: "/trade", label: "Trade" },
+  { href: "/auto-trade", label: "Auto Trade" },
   { href: "/settings/connect-exchange", label: "Connect Exchange" },
 ];
 
@@ -124,7 +125,7 @@ export function AppHeader() {
               >
                 Connect Exchange
               </button>
-              <button
+              {/* <button
                 type="button"
                 className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
                 onClick={() => {
@@ -133,6 +134,16 @@ export function AppHeader() {
                 }}
               >
                 Open Trade
+              </button> */}
+              <button
+                type="button"
+                className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  router.push("/auto-trade");
+                }}
+              >
+                Open Auto Trade
               </button>
               <div className="my-1 h-px bg-border" />
               <button

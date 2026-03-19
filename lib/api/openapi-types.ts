@@ -501,151 +501,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/trading/spot/orders": {
+    "/api/v1/accounts/{account_id}/trades": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        /** Place spot order */
-        post: operations["place_spot_order_api_v1_trading_spot_orders_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/orders/{order_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Cancel spot order */
-        delete: operations["cancel_spot_order_api_v1_trading_spot_orders__order_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/orders/detail/{order_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get detailed spot order */
-        get: operations["get_spot_order_detail_api_v1_trading_spot_orders_detail__order_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/orders/open": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List open spot orders */
-        get: operations["get_open_spot_orders_api_v1_trading_spot_orders_open_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/orders/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List closed spot orders */
-        get: operations["get_spot_order_history_api_v1_trading_spot_orders_history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/trades": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List spot trades */
-        get: operations["get_spot_trades_api_v1_trading_spot_trades_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/balances": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get spot balances */
-        get: operations["get_spot_balances_api_v1_trading_spot_balances_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/positions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get spot positions view */
-        get: operations["get_spot_positions_api_v1_trading_spot_positions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/trading/spot/pnl": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get spot PnL */
-        get: operations["get_spot_pnl_api_v1_trading_spot_pnl_get"];
+        /** Get account trades with on-demand sync and PnL */
+        get: operations["get_account_trades_api_v1_accounts__account_id__trades_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -756,6 +620,143 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/auto-trade/configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List auto-trade configs */
+        get: operations["list_auto_trade_configs_api_v1_live_auto_trade_configs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get auto-trade config */
+        get: operations["get_auto_trade_config_api_v1_live_auto_trade_config_get"];
+        /** Create or update auto-trade config */
+        put: operations["upsert_auto_trade_config_api_v1_live_auto_trade_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/play": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enable auto-trade execution */
+        post: operations["play_auto_trade_api_v1_live_auto_trade_play_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/stop": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Disable auto-trade execution */
+        post: operations["stop_auto_trade_api_v1_live_auto_trade_stop_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/state": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get auto-trade runtime state */
+        get: operations["get_auto_trade_state_api_v1_live_auto_trade_state_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get auto-trade positions with PnL summary */
+        get: operations["get_auto_trade_positions_api_v1_live_auto_trade_positions_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/trades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get synchronized auto-trade futures fills */
+        get: operations["get_auto_trade_trades_api_v1_live_auto_trade_trades_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get auto-trade events */
+        get: operations["get_auto_trade_events_api_v1_live_auto_trade_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis/trigger-now": {
         parameters: {
             query?: never;
@@ -824,6 +825,127 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis/personal/defaults": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get personal analysis default agents and weights */
+        get: operations["get_personal_analysis_defaults_endpoint_api_v1_analysis_personal_defaults_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/profiles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List personal analysis profiles */
+        get: operations["list_personal_analysis_profiles_api_v1_analysis_personal_profiles_get"];
+        put?: never;
+        /** Create personal analysis profile */
+        post: operations["create_personal_analysis_profile_api_v1_analysis_personal_profiles_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/profiles/{profile_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** Update personal analysis profile */
+        put: operations["update_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__put"];
+        post?: never;
+        /** Deactivate personal analysis profile */
+        delete: operations["deactivate_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/profiles/{profile_id}/trigger": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger personal analysis job */
+        post: operations["trigger_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__trigger_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/jobs/{trade_job_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get personal analysis job status */
+        get: operations["get_personal_analysis_job_api_v1_analysis_personal_jobs__trade_job_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get personal analysis history */
+        get: operations["list_personal_analysis_history_api_v1_analysis_personal_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/analysis/personal/latest": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get latest personal analysis result */
+        get: operations["get_latest_personal_analysis_history_api_v1_analysis_personal_latest_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -840,8 +962,97 @@ export interface components {
             /** Result */
             result: string;
         };
+        /** AccountAutoTradeEventRead */
+        AccountAutoTradeEventRead: {
+            /** Id */
+            id: number;
+            /** Event Type */
+            event_type: string;
+            /** Level */
+            level: string;
+            /** Message */
+            message?: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+        };
+        /** AccountTradeRead */
+        AccountTradeRead: {
+            /** Exchange Trade Id */
+            exchange_trade_id: string;
+            /**
+             * Timestamp
+             * Format: date-time
+             */
+            timestamp: string;
+            /** Side */
+            side: string;
+            /** Price */
+            price: number;
+            /** Amount */
+            amount: number;
+            /** Fee */
+            fee: number;
+            /** Fee Currency */
+            fee_currency?: string | null;
+            /** Order Id */
+            order_id?: string | null;
+            /**
+             * Is Autotrade
+             * @default false
+             */
+            is_autotrade: boolean;
+            /** Raw */
+            raw?: {
+                [key: string]: unknown;
+            };
+        };
+        /** AccountTradesPnlRead */
+        AccountTradesPnlRead: {
+            /** Realized */
+            realized: number;
+            /** Unrealized */
+            unrealized: number;
+            /** Base Currency */
+            base_currency: string;
+            /** Quote Currency */
+            quote_currency: string;
+        };
+        /** AccountTradesRead */
+        AccountTradesRead: {
+            /** Account Id */
+            account_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Trades */
+            trades?: components["schemas"]["AccountTradeRead"][];
+            pnl: components["schemas"]["AccountTradesPnlRead"];
+            sync_state: components["schemas"]["AccountTradesSyncStateRead"];
+            /** Auto Trade Events */
+            auto_trade_events?: components["schemas"]["AccountAutoTradeEventRead"][];
+            /** Sync Warnings */
+            sync_warnings?: string[];
+        };
+        /** AccountTradesSyncStateRead */
+        AccountTradesSyncStateRead: {
+            /** Last Trade Id */
+            last_trade_id?: string | null;
+            /** Last Trade Ts */
+            last_trade_ts?: string | null;
+        };
         /** AtrObSignalRequest */
         AtrObSignalRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -899,6 +1110,11 @@ export interface components {
         };
         /** AtrOrderBlockRequest */
         AtrOrderBlockRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -964,19 +1180,6 @@ export interface components {
              * @default 1000
              */
             allocation_usdt: number;
-        };
-        /** AttachedTriggerOrder */
-        AttachedTriggerOrder: {
-            /** Trigger Price */
-            trigger_price: number;
-            /**
-             * Order Type
-             * @default market
-             * @enum {string}
-             */
-            order_type: "market" | "limit";
-            /** Price */
-            price?: number | null;
         };
         /** AuditLogCreate */
         AuditLogCreate: {
@@ -1053,6 +1256,387 @@ export interface components {
             user: components["schemas"]["UserRead"];
             token: components["schemas"]["TokenResponse"];
         };
+        /** AutoTradeConfigRead */
+        AutoTradeConfigRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Is Running */
+            is_running: boolean;
+            /** Position Size Usdt */
+            position_size_usdt: number;
+            /** Leverage */
+            leverage: number;
+            /** Min Confidence Pct */
+            min_confidence_pct: number;
+            /** Fast Close Confidence Pct */
+            fast_close_confidence_pct: number;
+            /** Confirm Reports Required */
+            confirm_reports_required: number;
+            /** Risk Mode */
+            risk_mode: string;
+            /** Sl Pct */
+            sl_pct: number;
+            /** Tp Pct */
+            tp_pct: number;
+            /** Last Started At */
+            last_started_at: string | null;
+            /** Last Stopped At */
+            last_stopped_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AutoTradeConfigUpsertRequest */
+        AutoTradeConfigUpsertRequest: {
+            /**
+             * Enabled
+             * @default false
+             */
+            enabled: boolean;
+            /** Profile Id */
+            profile_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Position Size Usdt */
+            position_size_usdt: number;
+            /**
+             * Leverage
+             * @default 1
+             */
+            leverage: number;
+            /**
+             * Min Confidence Pct
+             * @default 62
+             */
+            min_confidence_pct: number;
+            /**
+             * Fast Close Confidence Pct
+             * @default 80
+             */
+            fast_close_confidence_pct: number;
+            /**
+             * Confirm Reports Required
+             * @default 2
+             */
+            confirm_reports_required: number;
+            /**
+             * Risk Mode
+             * @default 1:2
+             */
+            risk_mode: string;
+            /** Sl Pct */
+            sl_pct: number;
+            /** Tp Pct */
+            tp_pct: number;
+        };
+        /** AutoTradeConfigsResponse */
+        AutoTradeConfigsResponse: {
+            /** Configs */
+            configs?: components["schemas"]["AutoTradeConfigRead"][];
+            /** Active Account Id */
+            active_account_id?: number | null;
+            active_config?: components["schemas"]["AutoTradeConfigRead"] | null;
+        };
+        /** AutoTradeEventRead */
+        AutoTradeEventRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Config Id */
+            config_id: number | null;
+            /** Profile Id */
+            profile_id: number | null;
+            /** History Id */
+            history_id: number | null;
+            /** Position Id */
+            position_id: number | null;
+            /** Event Type */
+            event_type: string;
+            /** Level */
+            level: string;
+            /** Message */
+            message: string | null;
+            /** Payload */
+            payload: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AutoTradeEventsResponse */
+        AutoTradeEventsResponse: {
+            /** Events */
+            events?: components["schemas"]["AutoTradeEventRead"][];
+        };
+        /** AutoTradeLedgerTradeRead */
+        AutoTradeLedgerTradeRead: {
+            /** Id */
+            id: number;
+            /** Account Id */
+            account_id: number;
+            /** Exchange Name */
+            exchange_name: string;
+            /** Market Type */
+            market_type: string;
+            /** Symbol */
+            symbol: string;
+            /** Exchange Trade Id */
+            exchange_trade_id: string;
+            /** Exchange Order Id */
+            exchange_order_id: string | null;
+            /** Client Order Id */
+            client_order_id: string | null;
+            /** Side */
+            side: string;
+            /** Price */
+            price: number;
+            /** Amount */
+            amount: number;
+            /** Cost */
+            cost: number | null;
+            /** Fee Cost */
+            fee_cost: number;
+            /** Fee Currency */
+            fee_currency: string | null;
+            /**
+             * Traded At
+             * Format: date-time
+             */
+            traded_at: string;
+            /**
+             * Ingested At
+             * Format: date-time
+             */
+            ingested_at: string;
+            /** Origin */
+            origin: string;
+            /** Origin Confidence */
+            origin_confidence: string;
+            /** Auto Trade Config Id */
+            auto_trade_config_id: number | null;
+            /** Auto Trade Position Id */
+            auto_trade_position_id: number | null;
+            /** Open History Id */
+            open_history_id: number | null;
+            /** Close History Id */
+            close_history_id: number | null;
+            /** Raw Trade */
+            raw_trade: {
+                [key: string]: unknown;
+            };
+        };
+        /** AutoTradeLedgerTradesResponse */
+        AutoTradeLedgerTradesResponse: {
+            /** Trades */
+            trades?: components["schemas"]["AutoTradeLedgerTradeRead"][];
+            summary: components["schemas"]["AutoTradeLedgerTradesSummaryRead"];
+        };
+        /** AutoTradeLedgerTradesSummaryRead */
+        AutoTradeLedgerTradesSummaryRead: {
+            /** Total */
+            total: number;
+            /** Platform */
+            platform: number;
+            /** External */
+            external: number;
+            /** Total Fee Usdt */
+            total_fee_usdt: number;
+        };
+        /** AutoTradePlayStopResponse */
+        AutoTradePlayStopResponse: {
+            config: components["schemas"]["AutoTradeConfigRead"];
+        };
+        /** AutoTradePositionPnlRead */
+        AutoTradePositionPnlRead: {
+            /** Position Id */
+            position_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Chart Symbol */
+            chart_symbol: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "LONG" | "SHORT";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "closed" | "error";
+            /** Entry Price */
+            entry_price: number;
+            /** Mark Price */
+            mark_price?: number | null;
+            /** Close Price */
+            close_price?: number | null;
+            /** Quantity */
+            quantity: number;
+            /** Entry Notional Usdt */
+            entry_notional_usdt: number;
+            /** Initial Margin Usdt */
+            initial_margin_usdt: number;
+            /** Realized Pnl Usdt */
+            realized_pnl_usdt?: number | null;
+            /** Unrealized Pnl Usdt */
+            unrealized_pnl_usdt?: number | null;
+            /** Total Pnl Usdt */
+            total_pnl_usdt?: number | null;
+            /** Pnl Pct */
+            pnl_pct?: number | null;
+            /** Roe Pct */
+            roe_pct?: number | null;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "exchange" | "derived" | "closed" | "unavailable";
+            /** Error */
+            error?: string | null;
+            /**
+             * Calculated At
+             * Format: date-time
+             */
+            calculated_at: string;
+        };
+        /** AutoTradePositionRead */
+        AutoTradePositionRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Config Id */
+            config_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "LONG" | "SHORT";
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "open" | "closed" | "error";
+            /** Entry Price */
+            entry_price: number;
+            /** Quantity */
+            quantity: number;
+            /** Position Size Usdt */
+            position_size_usdt: number;
+            /** Leverage */
+            leverage: number;
+            /** Tp Price */
+            tp_price: number;
+            /** Sl Price */
+            sl_price: number;
+            /** Entry Confidence Pct */
+            entry_confidence_pct: number;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Close Reason */
+            close_reason: string | null;
+            /** Close Price */
+            close_price: number | null;
+            /** Open Order Id */
+            open_order_id: string | null;
+            /** Close Order Id */
+            close_order_id: string | null;
+            /** Open History Id */
+            open_history_id: number | null;
+            /** Close History Id */
+            close_history_id: number | null;
+            /** Raw Open Order */
+            raw_open_order: {
+                [key: string]: unknown;
+            };
+            /** Raw Close Order */
+            raw_close_order: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AutoTradePositionWithPnlRead */
+        AutoTradePositionWithPnlRead: {
+            position: components["schemas"]["AutoTradePositionRead"];
+            pnl: components["schemas"]["AutoTradePositionPnlRead"];
+            /** Lifecycle */
+            lifecycle?: {
+                [key: string]: unknown;
+            };
+            /** Trade Pnl Usdt */
+            trade_pnl_usdt?: number | null;
+        };
+        /** AutoTradePositionsResponse */
+        AutoTradePositionsResponse: {
+            /** Positions */
+            positions?: components["schemas"]["AutoTradePositionWithPnlRead"][];
+            summary: components["schemas"]["AutoTradePositionsSummaryRead"];
+        };
+        /** AutoTradePositionsSummaryRead */
+        AutoTradePositionsSummaryRead: {
+            /** Total Positions */
+            total_positions: number;
+            /** Open Positions */
+            open_positions: number;
+            /** Closed Positions */
+            closed_positions: number;
+            /** Total Realized Pnl Usdt */
+            total_realized_pnl_usdt: number;
+            /** Total Unrealized Pnl Usdt */
+            total_unrealized_pnl_usdt: number;
+            /** Total Pnl Usdt */
+            total_pnl_usdt: number;
+            /** Total Trade Pnl Usdt */
+            total_trade_pnl_usdt: number;
+        };
+        /** AutoTradeStateResponse */
+        AutoTradeStateResponse: {
+            config?: components["schemas"]["AutoTradeConfigRead"] | null;
+        };
         /** BacktestCatalogResponse */
         BacktestCatalogResponse: {
             vwap: components["schemas"]["VwapCatalog"];
@@ -1081,6 +1665,11 @@ export interface components {
         };
         /** BuilderSignalRequest */
         BuilderSignalRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -1290,6 +1879,11 @@ export interface components {
         /** GridBotRequest */
         GridBotRequest: {
             /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
+            /**
              * Symbol
              * @default BTC/USDT
              */
@@ -1368,6 +1962,11 @@ export interface components {
         };
         /** IntradayMomentumRequest */
         IntradayMomentumRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -1474,6 +2073,11 @@ export interface components {
         };
         /** KnifeCatcherRequest */
         KnifeCatcherRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -1612,8 +2216,8 @@ export interface components {
         /** LivePaperPollResponse */
         LivePaperPollResponse: {
             profile: components["schemas"]["LivePaperProfileRead"];
-            /** Trades */
-            trades?: components["schemas"]["LivePaperTradeRead"][];
+            /** Live Trades Since Start */
+            live_trades_since_start?: components["schemas"]["LivePaperTradeRead"][];
             /** Events */
             events?: components["schemas"]["LivePaperEventRead"][];
             /** Metrics */
@@ -1775,91 +2379,193 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
-        /** NormalizedBalance */
-        NormalizedBalance: {
-            /** Asset */
-            asset: string;
-            /** Free */
-            free: number;
-            /** Used */
-            used: number;
-            /** Total */
-            total: number;
-        };
-        /** NormalizedOrder */
-        NormalizedOrder: {
-            /** Id */
-            id: string;
-            /** Client Order Id */
-            client_order_id?: string | null;
-            /** Symbol */
-            symbol: string;
-            /**
-             * Side
-             * @enum {string}
-             */
-            side: "buy" | "sell";
-            /**
-             * Order Type
-             * @enum {string}
-             */
-            order_type: "market" | "limit";
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "open" | "closed" | "canceled" | "rejected" | "expired" | "unknown";
-            /** Amount */
-            amount: number;
-            /** Filled */
-            filled: number;
-            /** Remaining */
-            remaining: number;
-            /** Price */
-            price?: number | null;
-            /** Average */
-            average?: number | null;
-            /** Cost */
-            cost?: number | null;
-            /** Timestamp */
-            timestamp?: string | null;
-            /** Raw */
-            raw?: {
-                [key: string]: unknown;
+        /** PersonalAnalysisDefaultsRead */
+        PersonalAnalysisDefaultsRead: {
+            /** Available Agents */
+            available_agents: string[];
+            /** Agents */
+            agents: {
+                [key: string]: boolean;
+            };
+            /** Agent Weights */
+            agent_weights: {
+                [key: string]: number;
             };
         };
-        /** NormalizedTrade */
-        NormalizedTrade: {
+        /** PersonalAnalysisHistoryRead */
+        PersonalAnalysisHistoryRead: {
             /** Id */
-            id: string;
-            /** Order Id */
-            order_id?: string | null;
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Trade Job Id */
+            trade_job_id: string;
             /** Symbol */
             symbol: string;
-            /**
-             * Side
-             * @enum {string}
-             */
-            side: "buy" | "sell";
-            /** Amount */
-            amount: number;
-            /** Price */
-            price: number;
-            /** Cost */
-            cost?: number | null;
-            /**
-             * Fee Cost
-             * @default 0
-             */
-            fee_cost: number;
-            /** Fee Currency */
-            fee_currency?: string | null;
-            /** Timestamp */
-            timestamp?: string | null;
-            /** Raw */
-            raw?: {
+            /** Analysis Data */
+            analysis_data: {
                 [key: string]: unknown;
             };
+            /** Core Completed At */
+            core_completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PersonalAnalysisJobRead */
+        PersonalAnalysisJobRead: {
+            /** Id */
+            id: string;
+            /** User Id */
+            user_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Core Job Id */
+            core_job_id: string;
+            /** Status */
+            status: string;
+            /** Attempt */
+            attempt: number;
+            /** Max Attempts */
+            max_attempts: number;
+            /** Error */
+            error: string | null;
+            /**
+             * Next Poll At
+             * Format: date-time
+             */
+            next_poll_at: string;
+            /** Completed At */
+            completed_at: string | null;
+            /** Core Deleted At */
+            core_deleted_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PersonalAnalysisManualTriggerRequest */
+        PersonalAnalysisManualTriggerRequest: {
+            /** Query Prompt */
+            query_prompt?: string | null;
+            /** Agents */
+            agents?: {
+                [key: string]: boolean;
+            } | null;
+            /** Agent Weights */
+            agent_weights?: {
+                [key: string]: number;
+            } | null;
+        };
+        /** PersonalAnalysisManualTriggerResponse */
+        PersonalAnalysisManualTriggerResponse: {
+            /** Trade Job Id */
+            trade_job_id: string;
+            /** Core Job Id */
+            core_job_id: string;
+            /** Status */
+            status: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** PersonalAnalysisProfileCreate */
+        PersonalAnalysisProfileCreate: {
+            /** Symbol */
+            symbol: string;
+            /** Query Prompt */
+            query_prompt?: string | null;
+            /** Agents */
+            agents?: {
+                [key: string]: boolean;
+            } | null;
+            /** Agent Weights */
+            agent_weights?: {
+                [key: string]: number;
+            } | null;
+            /**
+             * Interval Minutes
+             * @default 60
+             */
+            interval_minutes: number;
+        };
+        /** PersonalAnalysisProfileRead */
+        PersonalAnalysisProfileRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Query Prompt */
+            query_prompt: string | null;
+            /** Agents */
+            agents: {
+                [key: string]: boolean;
+            };
+            /** Agent Weights */
+            agent_weights: {
+                [key: string]: number;
+            };
+            /** Interval Minutes */
+            interval_minutes: number;
+            /** Is Active */
+            is_active: boolean;
+            /**
+             * Next Run At
+             * Format: date-time
+             */
+            next_run_at: string;
+            /** Last Triggered At */
+            last_triggered_at: string | null;
+            /** Last Completed At */
+            last_completed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** PersonalAnalysisProfileUpdate */
+        PersonalAnalysisProfileUpdate: {
+            /** Symbol */
+            symbol?: string | null;
+            /** Query Prompt */
+            query_prompt?: string | null;
+            /** Agents */
+            agents?: {
+                [key: string]: boolean;
+            } | null;
+            /** Agent Weights */
+            agent_weights?: {
+                [key: string]: number;
+            } | null;
+            /** Interval Minutes */
+            interval_minutes?: number | null;
+            /** Is Active */
+            is_active?: boolean | null;
         };
         /** PortfolioBacktestRequest */
         PortfolioBacktestRequest: {
@@ -1978,143 +2684,6 @@ export interface components {
              * @default 0.06
              */
             fee_pct: number;
-        };
-        /** SpotBalancesRead */
-        SpotBalancesRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            /** Balances */
-            balances: components["schemas"]["NormalizedBalance"][];
-        };
-        /** SpotOrderCreate */
-        SpotOrderCreate: {
-            /** Account Id */
-            account_id: number;
-            /** Symbol */
-            symbol: string;
-            /**
-             * Side
-             * @enum {string}
-             */
-            side: "buy" | "sell";
-            /**
-             * Order Type
-             * @enum {string}
-             */
-            order_type: "market" | "limit";
-            /** Amount */
-            amount: number;
-            /** Price */
-            price?: number | null;
-            /** Client Order Id */
-            client_order_id?: string | null;
-            attached_take_profit?: components["schemas"]["AttachedTriggerOrder"] | null;
-            attached_stop_loss?: components["schemas"]["AttachedTriggerOrder"] | null;
-        };
-        /** SpotOrderRead */
-        SpotOrderRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            order: components["schemas"]["NormalizedOrder"];
-        };
-        /** SpotOrdersRead */
-        SpotOrdersRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            /** Orders */
-            orders: components["schemas"]["NormalizedOrder"][];
-        };
-        /** SpotPnlAsset */
-        SpotPnlAsset: {
-            /** Asset */
-            asset: string;
-            /** Quantity */
-            quantity: number;
-            /** Average Entry Price */
-            average_entry_price?: number | null;
-            /** Mark Price */
-            mark_price?: number | null;
-            /**
-             * Realized Pnl Quote
-             * @default 0
-             */
-            realized_pnl_quote: number;
-            /**
-             * Unrealized Pnl Quote
-             * @default 0
-             */
-            unrealized_pnl_quote: number;
-            /**
-             * Total Fees Quote
-             * @default 0
-             */
-            total_fees_quote: number;
-        };
-        /** SpotPnlRead */
-        SpotPnlRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            /** Quote Asset */
-            quote_asset: string;
-            /** Realized Pnl Quote */
-            realized_pnl_quote: number;
-            /** Unrealized Pnl Quote */
-            unrealized_pnl_quote: number;
-            /** Total Fees Quote */
-            total_fees_quote: number;
-            /** Assets */
-            assets: components["schemas"]["SpotPnlAsset"][];
-        };
-        /** SpotPositionView */
-        SpotPositionView: {
-            /** Asset */
-            asset: string;
-            /** Quantity */
-            quantity: number;
-            /** Mark Price */
-            mark_price?: number | null;
-            /** Market Value Quote */
-            market_value_quote?: number | null;
-            /** Unrealized Pnl Quote */
-            unrealized_pnl_quote?: number | null;
-        };
-        /** SpotPositionsRead */
-        SpotPositionsRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            /** Positions */
-            positions: components["schemas"]["SpotPositionView"][];
-        };
-        /** SpotTradesRead */
-        SpotTradesRead: {
-            /** Account Id */
-            account_id: number;
-            /** Exchange Name */
-            exchange_name: string;
-            /** Mode */
-            mode: string;
-            /** Trades */
-            trades: components["schemas"]["NormalizedTrade"][];
         };
         /** StrategyCreate */
         StrategyCreate: {
@@ -2262,6 +2831,11 @@ export interface components {
         };
         /** VwapBacktestRequest */
         VwapBacktestRequest: {
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
             /**
              * Symbol
              * @default BTC/USDT
@@ -3334,213 +3908,17 @@ export interface operations {
             };
         };
     };
-    place_spot_order_api_v1_trading_spot_orders_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SpotOrderCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotOrderRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    cancel_spot_order_api_v1_trading_spot_orders__order_id__delete: {
+    get_account_trades_api_v1_accounts__account_id__trades_get: {
         parameters: {
             query: {
-                account_id: number;
-                symbol?: string | null;
-            };
-            header?: never;
-            path: {
-                order_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotOrderRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_order_detail_api_v1_trading_spot_orders_detail__order_id__get: {
-        parameters: {
-            query: {
-                account_id: number;
                 symbol: string;
+                limit?: number;
+                events_limit?: number;
             };
             header?: never;
             path: {
-                order_id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotOrderRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_open_spot_orders_api_v1_trading_spot_orders_open_get: {
-        parameters: {
-            query: {
-                account_id: number;
-                symbol?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotOrdersRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_order_history_api_v1_trading_spot_orders_history_get: {
-        parameters: {
-            query: {
-                account_id: number;
-                symbol?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotOrdersRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_trades_api_v1_trading_spot_trades_get: {
-        parameters: {
-            query: {
-                account_id: number;
-                symbol?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotTradesRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_balances_api_v1_trading_spot_balances_get: {
-        parameters: {
-            query: {
                 account_id: number;
             };
-            header?: never;
-            path?: never;
             cookie?: never;
         };
         requestBody?: never;
@@ -3551,72 +3929,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["SpotBalancesRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_positions_api_v1_trading_spot_positions_get: {
-        parameters: {
-            query: {
-                account_id: number;
-                quote_asset?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotPositionsRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_spot_pnl_api_v1_trading_spot_pnl_get: {
-        parameters: {
-            query: {
-                account_id: number;
-                quote_asset?: string;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SpotPnlRead"];
+                    "application/json": components["schemas"]["AccountTradesRead"];
                 };
             };
             /** @description Validation Error */
@@ -3802,6 +4115,282 @@ export interface operations {
             };
         };
     };
+    list_auto_trade_configs_api_v1_live_auto_trade_configs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigsResponse"];
+                };
+            };
+        };
+    };
+    get_auto_trade_config_api_v1_live_auto_trade_config_get: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upsert_auto_trade_config_api_v1_live_auto_trade_config_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoTradeConfigUpsertRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    play_auto_trade_api_v1_live_auto_trade_play_post: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradePlayStopResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_auto_trade_api_v1_live_auto_trade_stop_post: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradePlayStopResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_trade_state_api_v1_live_auto_trade_state_get: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeStateResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_trade_positions_api_v1_live_auto_trade_positions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                status?: ("open" | "closed" | "error") | null;
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradePositionsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_trade_trades_api_v1_live_auto_trade_trades_get: {
+        parameters: {
+            query: {
+                account_id: number;
+                symbol?: string | null;
+                origin?: ("platform" | "external" | "unknown") | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeLedgerTradesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_trade_events_api_v1_live_auto_trade_events_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                account_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeEventsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     trigger_analysis_now_api_v1_analysis_trigger_now_post: {
         parameters: {
             query?: never;
@@ -3892,6 +4481,274 @@ export interface operations {
                 };
                 content: {
                     "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_personal_analysis_defaults_endpoint_api_v1_analysis_personal_defaults_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisDefaultsRead"];
+                };
+            };
+        };
+    };
+    list_personal_analysis_profiles_api_v1_analysis_personal_profiles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisProfileRead"][];
+                };
+            };
+        };
+    };
+    create_personal_analysis_profile_api_v1_analysis_personal_profiles_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalAnalysisProfileCreate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalAnalysisProfileUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisProfileRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    deactivate_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_personal_analysis_profile_api_v1_analysis_personal_profiles__profile_id__trigger_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PersonalAnalysisManualTriggerRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            202: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisManualTriggerResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_personal_analysis_job_api_v1_analysis_personal_jobs__trade_job_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                trade_job_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisJobRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_personal_analysis_history_api_v1_analysis_personal_history_get: {
+        parameters: {
+            query?: {
+                profile_id?: number | null;
+                limit?: number;
+                before?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisHistoryRead"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_latest_personal_analysis_history_api_v1_analysis_personal_latest_get: {
+        parameters: {
+            query?: {
+                profile_id?: number | null;
+                symbol?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PersonalAnalysisHistoryRead"];
                 };
             };
             /** @description Validation Error */

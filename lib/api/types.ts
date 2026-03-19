@@ -101,7 +101,8 @@ export type SignalExecuteRequest =
 export type LiveSignalResult = components["schemas"]["LiveSignalResult"];
 export type LivePaperProfileUpsertRequest =
   components["schemas"]["LivePaperProfileUpsertRequest"];
-export type LivePaperProfileRead = components["schemas"]["LivePaperProfileRead"];
+export type LivePaperProfileRead =
+  components["schemas"]["LivePaperProfileRead"];
 export type LivePaperTradeRead = components["schemas"]["LivePaperTradeRead"];
 export type LivePaperEventRead = components["schemas"]["LivePaperEventRead"];
 type RawLivePaperPollResponse = components["schemas"]["LivePaperPollResponse"];
@@ -113,6 +114,36 @@ export type LivePaperPollResponse = Omit<
 };
 export type LivePaperPlayStopResponse =
   components["schemas"]["LivePaperPlayStopResponse"];
+
+export type AutoTradeConfigUpsertRequest =
+  components["schemas"]["AutoTradeConfigUpsertRequest"];
+export type AutoTradeConfigRead = components["schemas"]["AutoTradeConfigRead"];
+export type AutoTradeConfigsResponse =
+  components["schemas"]["AutoTradeConfigsResponse"];
+export type AutoTradePlayStopResponse =
+  components["schemas"]["AutoTradePlayStopResponse"];
+export type AutoTradeStateResponse =
+  components["schemas"]["AutoTradeStateResponse"];
+export type AutoTradeEventRead = components["schemas"]["AutoTradeEventRead"];
+export type AutoTradeEventsResponse =
+  components["schemas"]["AutoTradeEventsResponse"];
+export type AccountTradeRead = components["schemas"]["AccountTradeRead"];
+export type AccountTradesPnlRead = components["schemas"]["AccountTradesPnlRead"];
+export type AccountTradesSyncStateRead =
+  components["schemas"]["AccountTradesSyncStateRead"];
+export type AccountAutoTradeEventRead =
+  components["schemas"]["AccountAutoTradeEventRead"];
+export type AccountTradesRead = components["schemas"]["AccountTradesRead"];
+export type AutoTradePositionRead =
+  components["schemas"]["AutoTradePositionRead"];
+export type AutoTradePositionPnlRead =
+  components["schemas"]["AutoTradePositionPnlRead"];
+export type AutoTradePositionWithPnlRead =
+  components["schemas"]["AutoTradePositionWithPnlRead"];
+export type AutoTradePositionsSummaryRead =
+  components["schemas"]["AutoTradePositionsSummaryRead"];
+export type AutoTradePositionsResponse =
+  components["schemas"]["AutoTradePositionsResponse"];
 
 export type MarketMetaResponse = components["schemas"]["MarketMetaResponse"];
 export type MarketOhlcvResponse = components["schemas"]["MarketOhlcvResponse"];
@@ -150,18 +181,67 @@ export type ExchangeAccountValidateResponse =
 export type ExchangeAccountsMetaResponse =
   components["schemas"]["ExchangeAccountsMetaResponse"];
 
-export type SpotOrderCreate = components["schemas"]["SpotOrderCreate"];
-export type SpotOrderRead = components["schemas"]["SpotOrderRead"];
-export type SpotOrdersRead = components["schemas"]["SpotOrdersRead"];
-export type SpotTradesRead = components["schemas"]["SpotTradesRead"];
-export type SpotBalancesRead = components["schemas"]["SpotBalancesRead"];
-export type SpotPositionsRead = components["schemas"]["SpotPositionsRead"];
-export type SpotPnlRead = components["schemas"]["SpotPnlRead"];
-export type NormalizedOrder = components["schemas"]["NormalizedOrder"];
-export type NormalizedTrade = components["schemas"]["NormalizedTrade"];
-export type NormalizedBalance = components["schemas"]["NormalizedBalance"];
-export type SpotPositionView = components["schemas"]["SpotPositionView"];
-export type SpotPnlAsset = components["schemas"]["SpotPnlAsset"];
+export type SpotOrderCreate = {
+  account_id: number;
+  symbol: string;
+  side: "buy" | "sell";
+  type: "market" | "limit";
+  amount: number;
+  price?: number | null;
+  client_order_id?: string | null;
+};
+export type SpotOrderRead = {
+  order_id: string;
+  status: string;
+  symbol: string;
+  side: string;
+  type: string;
+  price?: number | null;
+  amount?: number;
+  filled?: number;
+  created_at?: string | null;
+  [k: string]: unknown;
+};
+export type NormalizedOrder = Record<string, unknown>;
+export type NormalizedTrade = Record<string, unknown>;
+export type NormalizedBalance = Record<string, unknown>;
+export type SpotPositionView = Record<string, unknown>;
+export type SpotPnlAsset = {
+  asset: string;
+  free: number;
+  locked: number;
+  avg_buy_price: number;
+  qty: number;
+  market_price: number;
+  quote_value: number;
+  unrealized_pnl_quote: number;
+  realized_pnl_quote: number;
+  total_fees_quote: number;
+  [k: string]: unknown;
+};
+export type SpotOrdersRead = {
+  orders: NormalizedOrder[];
+  [k: string]: unknown;
+};
+export type SpotTradesRead = {
+  trades: NormalizedTrade[];
+  [k: string]: unknown;
+};
+export type SpotBalancesRead = {
+  balances: NormalizedBalance[];
+  [k: string]: unknown;
+};
+export type SpotPositionsRead = {
+  positions: SpotPositionView[];
+  [k: string]: unknown;
+};
+export type SpotPnlRead = {
+  realized_pnl_quote: number;
+  unrealized_pnl_quote: number;
+  total_fees_quote: number;
+  assets?: SpotPnlAsset[];
+  [k: string]: unknown;
+};
 
 export type AttachedTriggerOrder = {
   trigger_price: number;

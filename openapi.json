@@ -1025,110 +1025,18 @@
         "security": [{ "HTTPBearer": [] }]
       }
     },
-    "/api/v1/trading/spot/orders": {
-      "post": {
-        "tags": ["trading"],
-        "summary": "Place spot order",
-        "operationId": "place_spot_order_api_v1_trading_spot_orders_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": { "$ref": "#/components/schemas/SpotOrderCreate" }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotOrderRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        },
-        "security": [{ "HTTPBearer": [] }]
-      }
-    },
-    "/api/v1/trading/spot/orders/{order_id}": {
-      "delete": {
-        "tags": ["trading"],
-        "summary": "Cancel spot order",
-        "operationId": "cancel_spot_order_api_v1_trading_spot_orders__order_id__delete",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "order_id",
-            "in": "path",
-            "required": true,
-            "schema": { "type": "string", "title": "Order Id" }
-          },
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                { "type": "string", "minLength": 3, "maxLength": 32 },
-                { "type": "null" }
-              ],
-              "title": "Symbol"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotOrderRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/orders/detail/{order_id}": {
+    "/api/v1/accounts/{account_id}/trades": {
       "get": {
-        "tags": ["trading"],
-        "summary": "Get detailed spot order",
-        "operationId": "get_spot_order_detail_api_v1_trading_spot_orders_detail__order_id__get",
+        "tags": ["accounts"],
+        "summary": "Get account trades with on-demand sync and PnL",
+        "operationId": "get_account_trades_api_v1_accounts__account_id__trades_get",
         "security": [{ "HTTPBearer": [] }],
         "parameters": [
           {
-            "name": "order_id",
+            "name": "account_id",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "title": "Order Id" }
-          },
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
+            "schema": { "type": "integer", "title": "Account Id" }
           },
           {
             "name": "symbol",
@@ -1137,308 +1045,8 @@
             "schema": {
               "type": "string",
               "minLength": 3,
-              "maxLength": 32,
+              "maxLength": 64,
               "title": "Symbol"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotOrderRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/orders/open": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "List open spot orders",
-        "operationId": "get_open_spot_orders_api_v1_trading_spot_orders_open_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                { "type": "string", "minLength": 3, "maxLength": 32 },
-                { "type": "null" }
-              ],
-              "title": "Symbol"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 500,
-              "minimum": 1,
-              "default": 100,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotOrdersRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/orders/history": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "List closed spot orders",
-        "operationId": "get_spot_order_history_api_v1_trading_spot_orders_history_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                { "type": "string", "minLength": 3, "maxLength": 32 },
-                { "type": "null" }
-              ],
-              "title": "Symbol"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 500,
-              "minimum": 1,
-              "default": 100,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotOrdersRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/trades": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "List spot trades",
-        "operationId": "get_spot_trades_api_v1_trading_spot_trades_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "symbol",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                { "type": "string", "minLength": 3, "maxLength": 32 },
-                { "type": "null" }
-              ],
-              "title": "Symbol"
-            }
-          },
-          {
-            "name": "limit",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "integer",
-              "maximum": 500,
-              "minimum": 1,
-              "default": 100,
-              "title": "Limit"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotTradesRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/balances": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "Get spot balances",
-        "operationId": "get_spot_balances_api_v1_trading_spot_balances_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotBalancesRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/positions": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "Get spot positions view",
-        "operationId": "get_spot_positions_api_v1_trading_spot_positions_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "quote_asset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 10,
-              "default": "USDT",
-              "title": "Quote Asset"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotPositionsRead" }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v1/trading/spot/pnl": {
-      "get": {
-        "tags": ["trading"],
-        "summary": "Get spot PnL",
-        "operationId": "get_spot_pnl_api_v1_trading_spot_pnl_get",
-        "security": [{ "HTTPBearer": [] }],
-        "parameters": [
-          {
-            "name": "account_id",
-            "in": "query",
-            "required": true,
-            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
-          },
-          {
-            "name": "quote_asset",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string",
-              "minLength": 2,
-              "maxLength": 10,
-              "default": "USDT",
-              "title": "Quote Asset"
             }
           },
           {
@@ -1452,6 +1060,18 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "events_limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Events Limit"
+            }
           }
         ],
         "responses": {
@@ -1459,7 +1079,7 @@
             "description": "Successful Response",
             "content": {
               "application/json": {
-                "schema": { "$ref": "#/components/schemas/SpotPnlRead" }
+                "schema": { "$ref": "#/components/schemas/AccountTradesRead" }
               }
             }
           },
@@ -1661,6 +1281,412 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/LivePaperPollResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/configs": {
+      "get": {
+        "tags": ["live"],
+        "summary": "List auto-trade configs",
+        "operationId": "list_auto_trade_configs_api_v1_live_auto_trade_configs_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeConfigsResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [{ "HTTPBearer": [] }]
+      }
+    },
+    "/api/v1/live/auto-trade/config": {
+      "get": {
+        "tags": ["live"],
+        "summary": "Get auto-trade config",
+        "operationId": "get_auto_trade_config_api_v1_live_auto_trade_config_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AutoTradeConfigRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["live"],
+        "summary": "Create or update auto-trade config",
+        "operationId": "upsert_auto_trade_config_api_v1_live_auto_trade_config_put",
+        "security": [{ "HTTPBearer": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoTradeConfigUpsertRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AutoTradeConfigRead" }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/play": {
+      "post": {
+        "tags": ["live"],
+        "summary": "Enable auto-trade execution",
+        "operationId": "play_auto_trade_api_v1_live_auto_trade_play_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradePlayStopResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/stop": {
+      "post": {
+        "tags": ["live"],
+        "summary": "Disable auto-trade execution",
+        "operationId": "stop_auto_trade_api_v1_live_auto_trade_stop_post",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradePlayStopResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/state": {
+      "get": {
+        "tags": ["live"],
+        "summary": "Get auto-trade runtime state",
+        "operationId": "get_auto_trade_state_api_v1_live_auto_trade_state_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/positions": {
+      "get": {
+        "tags": ["live"],
+        "summary": "Get auto-trade positions with PnL summary",
+        "operationId": "get_auto_trade_positions_api_v1_live_auto_trade_positions_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 200,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "enum": ["open", "closed", "error"], "type": "string" },
+                { "type": "null" }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradePositionsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/trades": {
+      "get": {
+        "tags": ["live"],
+        "summary": "Get synchronized auto-trade futures fills",
+        "operationId": "get_auto_trade_trades_api_v1_live_auto_trade_trades_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "integer", "minimum": 1, "title": "Account Id" }
+          },
+          {
+            "name": "symbol",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [{ "type": "string" }, { "type": "null" }],
+              "title": "Symbol"
+            }
+          },
+          {
+            "name": "origin",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": ["platform", "external", "unknown"],
+                  "type": "string"
+                },
+                { "type": "null" }
+              ],
+              "title": "Origin"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 100,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeLedgerTradesResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/HTTPValidationError" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/events": {
+      "get": {
+        "tags": ["live"],
+        "summary": "Get auto-trade events",
+        "operationId": "get_auto_trade_events_api_v1_live_auto_trade_events_get",
+        "security": [{ "HTTPBearer": [] }],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "default": 50, "title": "Limit" }
+          },
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                { "type": "integer", "minimum": 1 },
+                { "type": "null" }
+              ],
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeEventsResponse"
                 }
               }
             }
@@ -2147,8 +2173,151 @@
         "required": ["result"],
         "title": "AIAgentResponse"
       },
+      "AccountAutoTradeEventRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "event_type": { "type": "string", "title": "Event Type" },
+          "level": { "type": "string", "title": "Level" },
+          "message": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Message"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          }
+        },
+        "type": "object",
+        "required": ["id", "event_type", "level", "created_at"],
+        "title": "AccountAutoTradeEventRead"
+      },
+      "AccountTradeRead": {
+        "properties": {
+          "exchange_trade_id": {
+            "type": "string",
+            "title": "Exchange Trade Id"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Timestamp"
+          },
+          "side": { "type": "string", "title": "Side" },
+          "price": { "type": "number", "minimum": 0.0, "title": "Price" },
+          "amount": { "type": "number", "minimum": 0.0, "title": "Amount" },
+          "fee": { "type": "number", "minimum": 0.0, "title": "Fee" },
+          "fee_currency": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Fee Currency"
+          },
+          "order_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Order Id"
+          },
+          "is_autotrade": {
+            "type": "boolean",
+            "title": "Is Autotrade",
+            "default": false
+          },
+          "raw": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Raw"
+          }
+        },
+        "type": "object",
+        "required": [
+          "exchange_trade_id",
+          "timestamp",
+          "side",
+          "price",
+          "amount",
+          "fee"
+        ],
+        "title": "AccountTradeRead"
+      },
+      "AccountTradesPnlRead": {
+        "properties": {
+          "realized": { "type": "number", "title": "Realized" },
+          "unrealized": { "type": "number", "title": "Unrealized" },
+          "base_currency": { "type": "string", "title": "Base Currency" },
+          "quote_currency": { "type": "string", "title": "Quote Currency" }
+        },
+        "type": "object",
+        "required": [
+          "realized",
+          "unrealized",
+          "base_currency",
+          "quote_currency"
+        ],
+        "title": "AccountTradesPnlRead"
+      },
+      "AccountTradesRead": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Account Id"
+          },
+          "symbol": { "type": "string", "title": "Symbol" },
+          "trades": {
+            "items": { "$ref": "#/components/schemas/AccountTradeRead" },
+            "type": "array",
+            "title": "Trades"
+          },
+          "pnl": { "$ref": "#/components/schemas/AccountTradesPnlRead" },
+          "sync_state": {
+            "$ref": "#/components/schemas/AccountTradesSyncStateRead"
+          },
+          "auto_trade_events": {
+            "items": {
+              "$ref": "#/components/schemas/AccountAutoTradeEventRead"
+            },
+            "type": "array",
+            "title": "Auto Trade Events"
+          },
+          "sync_warnings": {
+            "items": { "type": "string" },
+            "type": "array",
+            "title": "Sync Warnings"
+          }
+        },
+        "type": "object",
+        "required": ["account_id", "symbol", "pnl", "sync_state"],
+        "title": "AccountTradesRead"
+      },
+      "AccountTradesSyncStateRead": {
+        "properties": {
+          "last_trade_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Last Trade Id"
+          },
+          "last_trade_ts": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Last Trade Ts"
+          }
+        },
+        "type": "object",
+        "title": "AccountTradesSyncStateRead"
+      },
       "AtrObSignalRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -2241,6 +2410,13 @@
       },
       "AtrOrderBlockRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -2334,31 +2510,6 @@
         },
         "type": "object",
         "title": "AtrOrderBlockRequest"
-      },
-      "AttachedTriggerOrder": {
-        "properties": {
-          "trigger_price": {
-            "type": "number",
-            "exclusiveMinimum": 0.0,
-            "title": "Trigger Price"
-          },
-          "order_type": {
-            "type": "string",
-            "enum": ["market", "limit"],
-            "title": "Order Type",
-            "default": "market"
-          },
-          "price": {
-            "anyOf": [
-              { "type": "number", "exclusiveMinimum": 0.0 },
-              { "type": "null" }
-            ],
-            "title": "Price"
-          }
-        },
-        "type": "object",
-        "required": ["trigger_price"],
-        "title": "AttachedTriggerOrder"
       },
       "AuditLogCreate": {
         "properties": {
@@ -2484,6 +2635,683 @@
         "required": ["user", "token"],
         "title": "AuthUserResponse"
       },
+      "AutoTradeConfigRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "user_id": { "type": "integer", "title": "User Id" },
+          "profile_id": { "type": "integer", "title": "Profile Id" },
+          "account_id": { "type": "integer", "title": "Account Id" },
+          "enabled": { "type": "boolean", "title": "Enabled" },
+          "is_running": { "type": "boolean", "title": "Is Running" },
+          "position_size_usdt": {
+            "type": "number",
+            "title": "Position Size Usdt"
+          },
+          "leverage": { "type": "integer", "title": "Leverage" },
+          "min_confidence_pct": {
+            "type": "number",
+            "title": "Min Confidence Pct"
+          },
+          "fast_close_confidence_pct": {
+            "type": "number",
+            "title": "Fast Close Confidence Pct"
+          },
+          "confirm_reports_required": {
+            "type": "integer",
+            "title": "Confirm Reports Required"
+          },
+          "risk_mode": { "type": "string", "title": "Risk Mode" },
+          "sl_pct": { "type": "number", "title": "Sl Pct" },
+          "tp_pct": { "type": "number", "title": "Tp Pct" },
+          "last_started_at": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Last Started At"
+          },
+          "last_stopped_at": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Last Stopped At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "profile_id",
+          "account_id",
+          "enabled",
+          "is_running",
+          "position_size_usdt",
+          "leverage",
+          "min_confidence_pct",
+          "fast_close_confidence_pct",
+          "confirm_reports_required",
+          "risk_mode",
+          "sl_pct",
+          "tp_pct",
+          "last_started_at",
+          "last_stopped_at",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AutoTradeConfigRead"
+      },
+      "AutoTradeConfigUpsertRequest": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": false
+          },
+          "profile_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Profile Id"
+          },
+          "account_id": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Account Id"
+          },
+          "position_size_usdt": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Position Size Usdt"
+          },
+          "leverage": {
+            "type": "integer",
+            "maximum": 125.0,
+            "minimum": 1.0,
+            "title": "Leverage",
+            "default": 1
+          },
+          "min_confidence_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Min Confidence Pct",
+            "default": 62.0
+          },
+          "fast_close_confidence_pct": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Fast Close Confidence Pct",
+            "default": 80.0
+          },
+          "confirm_reports_required": {
+            "type": "integer",
+            "maximum": 5.0,
+            "minimum": 1.0,
+            "title": "Confirm Reports Required",
+            "default": 2
+          },
+          "risk_mode": {
+            "type": "string",
+            "title": "Risk Mode",
+            "default": "1:2"
+          },
+          "sl_pct": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Sl Pct"
+          },
+          "tp_pct": {
+            "type": "number",
+            "exclusiveMinimum": 0.0,
+            "title": "Tp Pct"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "account_id",
+          "position_size_usdt",
+          "sl_pct",
+          "tp_pct"
+        ],
+        "title": "AutoTradeConfigUpsertRequest"
+      },
+      "AutoTradeConfigsResponse": {
+        "properties": {
+          "configs": {
+            "items": { "$ref": "#/components/schemas/AutoTradeConfigRead" },
+            "type": "array",
+            "title": "Configs"
+          },
+          "active_account_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Active Account Id"
+          },
+          "active_config": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/AutoTradeConfigRead" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeConfigsResponse"
+      },
+      "AutoTradeEventRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "user_id": { "type": "integer", "title": "User Id" },
+          "config_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Config Id"
+          },
+          "profile_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Profile Id"
+          },
+          "history_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "History Id"
+          },
+          "position_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Position Id"
+          },
+          "event_type": { "type": "string", "title": "Event Type" },
+          "level": { "type": "string", "title": "Level" },
+          "message": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Message"
+          },
+          "payload": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Payload"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "config_id",
+          "profile_id",
+          "history_id",
+          "position_id",
+          "event_type",
+          "level",
+          "message",
+          "payload",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AutoTradeEventRead"
+      },
+      "AutoTradeEventsResponse": {
+        "properties": {
+          "events": {
+            "items": { "$ref": "#/components/schemas/AutoTradeEventRead" },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeEventsResponse"
+      },
+      "AutoTradeLedgerTradeRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "account_id": { "type": "integer", "title": "Account Id" },
+          "exchange_name": { "type": "string", "title": "Exchange Name" },
+          "market_type": { "type": "string", "title": "Market Type" },
+          "symbol": { "type": "string", "title": "Symbol" },
+          "exchange_trade_id": {
+            "type": "string",
+            "title": "Exchange Trade Id"
+          },
+          "exchange_order_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Exchange Order Id"
+          },
+          "client_order_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Client Order Id"
+          },
+          "side": { "type": "string", "title": "Side" },
+          "price": { "type": "number", "title": "Price" },
+          "amount": { "type": "number", "title": "Amount" },
+          "cost": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Cost"
+          },
+          "fee_cost": { "type": "number", "title": "Fee Cost" },
+          "fee_currency": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Fee Currency"
+          },
+          "traded_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Traded At"
+          },
+          "ingested_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Ingested At"
+          },
+          "origin": { "type": "string", "title": "Origin" },
+          "origin_confidence": {
+            "type": "string",
+            "title": "Origin Confidence"
+          },
+          "auto_trade_config_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Auto Trade Config Id"
+          },
+          "auto_trade_position_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Auto Trade Position Id"
+          },
+          "open_history_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Open History Id"
+          },
+          "close_history_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Close History Id"
+          },
+          "raw_trade": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Raw Trade"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "account_id",
+          "exchange_name",
+          "market_type",
+          "symbol",
+          "exchange_trade_id",
+          "exchange_order_id",
+          "client_order_id",
+          "side",
+          "price",
+          "amount",
+          "cost",
+          "fee_cost",
+          "fee_currency",
+          "traded_at",
+          "ingested_at",
+          "origin",
+          "origin_confidence",
+          "auto_trade_config_id",
+          "auto_trade_position_id",
+          "open_history_id",
+          "close_history_id",
+          "raw_trade"
+        ],
+        "title": "AutoTradeLedgerTradeRead"
+      },
+      "AutoTradeLedgerTradesResponse": {
+        "properties": {
+          "trades": {
+            "items": {
+              "$ref": "#/components/schemas/AutoTradeLedgerTradeRead"
+            },
+            "type": "array",
+            "title": "Trades"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AutoTradeLedgerTradesSummaryRead"
+          }
+        },
+        "type": "object",
+        "required": ["summary"],
+        "title": "AutoTradeLedgerTradesResponse"
+      },
+      "AutoTradeLedgerTradesSummaryRead": {
+        "properties": {
+          "total": { "type": "integer", "minimum": 0.0, "title": "Total" },
+          "platform": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Platform"
+          },
+          "external": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "External"
+          },
+          "total_fee_usdt": { "type": "number", "title": "Total Fee Usdt" }
+        },
+        "type": "object",
+        "required": ["total", "platform", "external", "total_fee_usdt"],
+        "title": "AutoTradeLedgerTradesSummaryRead"
+      },
+      "AutoTradePlayStopResponse": {
+        "properties": {
+          "config": { "$ref": "#/components/schemas/AutoTradeConfigRead" }
+        },
+        "type": "object",
+        "required": ["config"],
+        "title": "AutoTradePlayStopResponse"
+      },
+      "AutoTradePositionPnlRead": {
+        "properties": {
+          "position_id": { "type": "integer", "title": "Position Id" },
+          "symbol": { "type": "string", "title": "Symbol" },
+          "chart_symbol": { "type": "string", "title": "Chart Symbol" },
+          "side": {
+            "type": "string",
+            "enum": ["LONG", "SHORT"],
+            "title": "Side"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed", "error"],
+            "title": "Status"
+          },
+          "entry_price": { "type": "number", "title": "Entry Price" },
+          "mark_price": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Mark Price"
+          },
+          "close_price": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Close Price"
+          },
+          "quantity": { "type": "number", "title": "Quantity" },
+          "entry_notional_usdt": {
+            "type": "number",
+            "title": "Entry Notional Usdt"
+          },
+          "initial_margin_usdt": {
+            "type": "number",
+            "title": "Initial Margin Usdt"
+          },
+          "realized_pnl_usdt": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Realized Pnl Usdt"
+          },
+          "unrealized_pnl_usdt": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Unrealized Pnl Usdt"
+          },
+          "total_pnl_usdt": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Total Pnl Usdt"
+          },
+          "pnl_pct": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Pnl Pct"
+          },
+          "roe_pct": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Roe Pct"
+          },
+          "source": {
+            "type": "string",
+            "enum": ["exchange", "derived", "closed", "unavailable"],
+            "title": "Source"
+          },
+          "error": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Error"
+          },
+          "calculated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Calculated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "symbol",
+          "chart_symbol",
+          "side",
+          "status",
+          "entry_price",
+          "quantity",
+          "entry_notional_usdt",
+          "initial_margin_usdt",
+          "source",
+          "calculated_at"
+        ],
+        "title": "AutoTradePositionPnlRead"
+      },
+      "AutoTradePositionRead": {
+        "properties": {
+          "id": { "type": "integer", "title": "Id" },
+          "user_id": { "type": "integer", "title": "User Id" },
+          "config_id": { "type": "integer", "title": "Config Id" },
+          "profile_id": { "type": "integer", "title": "Profile Id" },
+          "account_id": { "type": "integer", "title": "Account Id" },
+          "symbol": { "type": "string", "title": "Symbol" },
+          "side": {
+            "type": "string",
+            "enum": ["LONG", "SHORT"],
+            "title": "Side"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["open", "closed", "error"],
+            "title": "Status"
+          },
+          "entry_price": { "type": "number", "title": "Entry Price" },
+          "quantity": { "type": "number", "title": "Quantity" },
+          "position_size_usdt": {
+            "type": "number",
+            "title": "Position Size Usdt"
+          },
+          "leverage": { "type": "integer", "title": "Leverage" },
+          "tp_price": { "type": "number", "title": "Tp Price" },
+          "sl_price": { "type": "number", "title": "Sl Price" },
+          "entry_confidence_pct": {
+            "type": "number",
+            "title": "Entry Confidence Pct"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "closed_at": {
+            "anyOf": [
+              { "type": "string", "format": "date-time" },
+              { "type": "null" }
+            ],
+            "title": "Closed At"
+          },
+          "close_reason": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Close Reason"
+          },
+          "close_price": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Close Price"
+          },
+          "open_order_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Open Order Id"
+          },
+          "close_order_id": {
+            "anyOf": [{ "type": "string" }, { "type": "null" }],
+            "title": "Close Order Id"
+          },
+          "open_history_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Open History Id"
+          },
+          "close_history_id": {
+            "anyOf": [{ "type": "integer" }, { "type": "null" }],
+            "title": "Close History Id"
+          },
+          "raw_open_order": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Raw Open Order"
+          },
+          "raw_close_order": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Raw Close Order"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "user_id",
+          "config_id",
+          "profile_id",
+          "account_id",
+          "symbol",
+          "side",
+          "status",
+          "entry_price",
+          "quantity",
+          "position_size_usdt",
+          "leverage",
+          "tp_price",
+          "sl_price",
+          "entry_confidence_pct",
+          "opened_at",
+          "closed_at",
+          "close_reason",
+          "close_price",
+          "open_order_id",
+          "close_order_id",
+          "open_history_id",
+          "close_history_id",
+          "raw_open_order",
+          "raw_close_order",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "AutoTradePositionRead"
+      },
+      "AutoTradePositionWithPnlRead": {
+        "properties": {
+          "position": { "$ref": "#/components/schemas/AutoTradePositionRead" },
+          "pnl": { "$ref": "#/components/schemas/AutoTradePositionPnlRead" },
+          "lifecycle": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Lifecycle"
+          },
+          "trade_pnl_usdt": {
+            "anyOf": [{ "type": "number" }, { "type": "null" }],
+            "title": "Trade Pnl Usdt"
+          }
+        },
+        "type": "object",
+        "required": ["position", "pnl"],
+        "title": "AutoTradePositionWithPnlRead"
+      },
+      "AutoTradePositionsResponse": {
+        "properties": {
+          "positions": {
+            "items": {
+              "$ref": "#/components/schemas/AutoTradePositionWithPnlRead"
+            },
+            "type": "array",
+            "title": "Positions"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/AutoTradePositionsSummaryRead"
+          }
+        },
+        "type": "object",
+        "required": ["summary"],
+        "title": "AutoTradePositionsResponse"
+      },
+      "AutoTradePositionsSummaryRead": {
+        "properties": {
+          "total_positions": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Positions"
+          },
+          "open_positions": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Open Positions"
+          },
+          "closed_positions": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Closed Positions"
+          },
+          "total_realized_pnl_usdt": {
+            "type": "number",
+            "title": "Total Realized Pnl Usdt"
+          },
+          "total_unrealized_pnl_usdt": {
+            "type": "number",
+            "title": "Total Unrealized Pnl Usdt"
+          },
+          "total_pnl_usdt": { "type": "number", "title": "Total Pnl Usdt" },
+          "total_trade_pnl_usdt": {
+            "type": "number",
+            "title": "Total Trade Pnl Usdt"
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_positions",
+          "open_positions",
+          "closed_positions",
+          "total_realized_pnl_usdt",
+          "total_unrealized_pnl_usdt",
+          "total_pnl_usdt",
+          "total_trade_pnl_usdt"
+        ],
+        "title": "AutoTradePositionsSummaryRead"
+      },
+      "AutoTradeStateResponse": {
+        "properties": {
+          "config": {
+            "anyOf": [
+              { "$ref": "#/components/schemas/AutoTradeConfigRead" },
+              { "type": "null" }
+            ]
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeStateResponse"
+      },
       "BacktestCatalogResponse": {
         "properties": {
           "vwap": { "$ref": "#/components/schemas/VwapCatalog" },
@@ -2539,6 +3367,13 @@
       },
       "BuilderSignalRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -2865,6 +3700,13 @@
       },
       "GridBotRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -2987,6 +3829,13 @@
       },
       "IntradayMomentumRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -3108,6 +3957,13 @@
       },
       "KnifeCatcherRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,
@@ -3545,138 +4401,6 @@
         "type": "object",
         "required": ["exchange_name", "symbol", "timeframe", "bars", "rows"],
         "title": "MarketOhlcvResponse"
-      },
-      "NormalizedBalance": {
-        "properties": {
-          "asset": { "type": "string", "title": "Asset" },
-          "free": { "type": "number", "minimum": 0.0, "title": "Free" },
-          "used": { "type": "number", "minimum": 0.0, "title": "Used" },
-          "total": { "type": "number", "minimum": 0.0, "title": "Total" }
-        },
-        "type": "object",
-        "required": ["asset", "free", "used", "total"],
-        "title": "NormalizedBalance"
-      },
-      "NormalizedOrder": {
-        "properties": {
-          "id": { "type": "string", "title": "Id" },
-          "client_order_id": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Client Order Id"
-          },
-          "symbol": { "type": "string", "title": "Symbol" },
-          "side": {
-            "type": "string",
-            "enum": ["buy", "sell"],
-            "title": "Side"
-          },
-          "order_type": {
-            "type": "string",
-            "enum": ["market", "limit"],
-            "title": "Order Type"
-          },
-          "status": {
-            "type": "string",
-            "enum": [
-              "open",
-              "closed",
-              "canceled",
-              "rejected",
-              "expired",
-              "unknown"
-            ],
-            "title": "Status"
-          },
-          "amount": { "type": "number", "minimum": 0.0, "title": "Amount" },
-          "filled": { "type": "number", "minimum": 0.0, "title": "Filled" },
-          "remaining": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Remaining"
-          },
-          "price": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Price"
-          },
-          "average": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Average"
-          },
-          "cost": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Cost"
-          },
-          "timestamp": {
-            "anyOf": [
-              { "type": "string", "format": "date-time" },
-              { "type": "null" }
-            ],
-            "title": "Timestamp"
-          },
-          "raw": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Raw"
-          }
-        },
-        "type": "object",
-        "required": [
-          "id",
-          "symbol",
-          "side",
-          "order_type",
-          "status",
-          "amount",
-          "filled",
-          "remaining"
-        ],
-        "title": "NormalizedOrder"
-      },
-      "NormalizedTrade": {
-        "properties": {
-          "id": { "type": "string", "title": "Id" },
-          "order_id": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Order Id"
-          },
-          "symbol": { "type": "string", "title": "Symbol" },
-          "side": {
-            "type": "string",
-            "enum": ["buy", "sell"],
-            "title": "Side"
-          },
-          "amount": { "type": "number", "minimum": 0.0, "title": "Amount" },
-          "price": { "type": "number", "minimum": 0.0, "title": "Price" },
-          "cost": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Cost"
-          },
-          "fee_cost": {
-            "type": "number",
-            "minimum": 0.0,
-            "title": "Fee Cost",
-            "default": 0.0
-          },
-          "fee_currency": {
-            "anyOf": [{ "type": "string" }, { "type": "null" }],
-            "title": "Fee Currency"
-          },
-          "timestamp": {
-            "anyOf": [
-              { "type": "string", "format": "date-time" },
-              { "type": "null" }
-            ],
-            "title": "Timestamp"
-          },
-          "raw": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Raw"
-          }
-        },
-        "type": "object",
-        "required": ["id", "symbol", "side", "amount", "price"],
-        "title": "NormalizedTrade"
       },
       "PersonalAnalysisDefaultsRead": {
         "properties": {
@@ -4219,247 +4943,6 @@
         "type": "object",
         "title": "SignalExecuteRequest"
       },
-      "SpotBalancesRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "balances": {
-            "items": { "$ref": "#/components/schemas/NormalizedBalance" },
-            "type": "array",
-            "title": "Balances"
-          }
-        },
-        "type": "object",
-        "required": ["account_id", "exchange_name", "mode", "balances"],
-        "title": "SpotBalancesRead"
-      },
-      "SpotOrderCreate": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "symbol": {
-            "type": "string",
-            "maxLength": 32,
-            "minLength": 3,
-            "title": "Symbol"
-          },
-          "side": {
-            "type": "string",
-            "enum": ["buy", "sell"],
-            "title": "Side"
-          },
-          "order_type": {
-            "type": "string",
-            "enum": ["market", "limit"],
-            "title": "Order Type"
-          },
-          "amount": {
-            "type": "number",
-            "exclusiveMinimum": 0.0,
-            "title": "Amount"
-          },
-          "price": {
-            "anyOf": [
-              { "type": "number", "exclusiveMinimum": 0.0 },
-              { "type": "null" }
-            ],
-            "title": "Price"
-          },
-          "client_order_id": {
-            "anyOf": [
-              { "type": "string", "maxLength": 64, "minLength": 1 },
-              { "type": "null" }
-            ],
-            "title": "Client Order Id"
-          },
-          "attached_take_profit": {
-            "anyOf": [
-              { "$ref": "#/components/schemas/AttachedTriggerOrder" },
-              { "type": "null" }
-            ]
-          },
-          "attached_stop_loss": {
-            "anyOf": [
-              { "$ref": "#/components/schemas/AttachedTriggerOrder" },
-              { "type": "null" }
-            ]
-          }
-        },
-        "type": "object",
-        "required": ["account_id", "symbol", "side", "order_type", "amount"],
-        "title": "SpotOrderCreate"
-      },
-      "SpotOrderRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "order": { "$ref": "#/components/schemas/NormalizedOrder" }
-        },
-        "type": "object",
-        "required": ["account_id", "exchange_name", "mode", "order"],
-        "title": "SpotOrderRead"
-      },
-      "SpotOrdersRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "orders": {
-            "items": { "$ref": "#/components/schemas/NormalizedOrder" },
-            "type": "array",
-            "title": "Orders"
-          }
-        },
-        "type": "object",
-        "required": ["account_id", "exchange_name", "mode", "orders"],
-        "title": "SpotOrdersRead"
-      },
-      "SpotPnlAsset": {
-        "properties": {
-          "asset": { "type": "string", "title": "Asset" },
-          "quantity": { "type": "number", "minimum": 0.0, "title": "Quantity" },
-          "average_entry_price": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Average Entry Price"
-          },
-          "mark_price": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Mark Price"
-          },
-          "realized_pnl_quote": {
-            "type": "number",
-            "title": "Realized Pnl Quote",
-            "default": 0.0
-          },
-          "unrealized_pnl_quote": {
-            "type": "number",
-            "title": "Unrealized Pnl Quote",
-            "default": 0.0
-          },
-          "total_fees_quote": {
-            "type": "number",
-            "title": "Total Fees Quote",
-            "default": 0.0
-          }
-        },
-        "type": "object",
-        "required": ["asset", "quantity"],
-        "title": "SpotPnlAsset"
-      },
-      "SpotPnlRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "quote_asset": { "type": "string", "title": "Quote Asset" },
-          "realized_pnl_quote": {
-            "type": "number",
-            "title": "Realized Pnl Quote"
-          },
-          "unrealized_pnl_quote": {
-            "type": "number",
-            "title": "Unrealized Pnl Quote"
-          },
-          "total_fees_quote": { "type": "number", "title": "Total Fees Quote" },
-          "assets": {
-            "items": { "$ref": "#/components/schemas/SpotPnlAsset" },
-            "type": "array",
-            "title": "Assets"
-          }
-        },
-        "type": "object",
-        "required": [
-          "account_id",
-          "exchange_name",
-          "mode",
-          "quote_asset",
-          "realized_pnl_quote",
-          "unrealized_pnl_quote",
-          "total_fees_quote",
-          "assets"
-        ],
-        "title": "SpotPnlRead"
-      },
-      "SpotPositionView": {
-        "properties": {
-          "asset": { "type": "string", "title": "Asset" },
-          "quantity": { "type": "number", "minimum": 0.0, "title": "Quantity" },
-          "mark_price": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Mark Price"
-          },
-          "market_value_quote": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Market Value Quote"
-          },
-          "unrealized_pnl_quote": {
-            "anyOf": [{ "type": "number" }, { "type": "null" }],
-            "title": "Unrealized Pnl Quote"
-          }
-        },
-        "type": "object",
-        "required": ["asset", "quantity"],
-        "title": "SpotPositionView"
-      },
-      "SpotPositionsRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "positions": {
-            "items": { "$ref": "#/components/schemas/SpotPositionView" },
-            "type": "array",
-            "title": "Positions"
-          }
-        },
-        "type": "object",
-        "required": ["account_id", "exchange_name", "mode", "positions"],
-        "title": "SpotPositionsRead"
-      },
-      "SpotTradesRead": {
-        "properties": {
-          "account_id": {
-            "type": "integer",
-            "minimum": 1.0,
-            "title": "Account Id"
-          },
-          "exchange_name": { "type": "string", "title": "Exchange Name" },
-          "mode": { "type": "string", "title": "Mode" },
-          "trades": {
-            "items": { "$ref": "#/components/schemas/NormalizedTrade" },
-            "type": "array",
-            "title": "Trades"
-          }
-        },
-        "type": "object",
-        "required": ["account_id", "exchange_name", "mode", "trades"],
-        "title": "SpotTradesRead"
-      },
       "StrategyCreate": {
         "properties": {
           "name": {
@@ -4691,6 +5174,13 @@
       },
       "VwapBacktestRequest": {
         "properties": {
+          "exchange_name": {
+            "type": "string",
+            "maxLength": 32,
+            "minLength": 2,
+            "title": "Exchange Name",
+            "default": "bybit"
+          },
           "symbol": {
             "type": "string",
             "maxLength": 24,

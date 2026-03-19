@@ -150,3 +150,29 @@
     }
   }
 }
+
+@layer components {
+  .app-toaster [data-sonner-toast][data-type="success"] {
+    border-color: color-mix(in oklab, var(--chart-2) 42%, var(--border));
+    background: color-mix(in oklab, var(--chart-2) 12%, var(--card));
+    color: var(--foreground);
+  }
+
+  .app-toaster [data-sonner-toast][data-type="info"] {
+    border-color: color-mix(in oklab, var(--primary) 40%, var(--border));
+    background: color-mix(in oklab, var(--primary) 12%, var(--card));
+    color: var(--foreground);
+  }
+
+  .app-toaster [data-sonner-toast][data-type="warning"] {
+    border-color: rgb(251 191 36 / 45%);
+    background: rgb(245 158 11 / 12%);
+    color: var(--foreground);
+  }
+
+  .app-toaster [data-sonner-toast][data-type="error"] {
+    border-color: color-mix(in oklab, var(--destructive) 45%, var(--border));
+    background: color-mix(in oklab, var(--destructive) 14%, var(--card));
+    color: var(--foreground);
+  }
+}

@@ -1,5 +1,9 @@
 import type { ApiValidationError } from "@/lib/api/types";
-import { clearAccessToken, getAccessToken, setAccessToken } from "@/lib/auth/token-storage";
+import {
+  clearAccessToken,
+  getAccessToken,
+  setAccessToken,
+} from "@/lib/auth/token-storage";
 import { normalizeTokenBundle } from "@/lib/auth/token-contract";
 
 const ERROR_CODE_BY_STATUS: Record<number, string> = {
@@ -25,7 +29,8 @@ export class ApiError extends Error {
     this.code = code;
     this.data = data;
     this.isRateLimited = status === 429 || code === "rate_limited";
-    this.isTemporary = this.isRateLimited || status === 503 || code === "service_unavailable";
+    this.isTemporary =
+      this.isRateLimited || status === 503 || code === "service_unavailable";
   }
 }
 
@@ -40,7 +45,10 @@ export function getApiBaseUrl(): string {
   return value.endsWith("/") ? value.slice(0, -1) : value;
 }
 
-function withQuery(path: string, query?: Record<string, string | number | boolean | undefined>) {
+function withQuery(
+  path: string,
+  query?: Record<string, string | number | boolean | undefined>,
+) {
   if (!query) {
     return path;
   }
@@ -115,7 +123,9 @@ async function parseResponsePayload(response: Response): Promise<unknown> {
     return undefined;
   }
 
-  const isJson = response.headers.get("content-type")?.includes("application/json");
+  const isJson = response.headers
+    .get("content-type")
+    ?.includes("application/json");
   return isJson ? ((await response.json()) as unknown) : await response.text();
 }
 
@@ -155,7 +165,9 @@ async function refreshAccessToken(): Promise<string | null> {
 }
 
 function getResponseErrorMessage(status: number, data: unknown) {
-  return status === 422 ? formatValidationError(data as ApiValidationError) : undefined;
+  return status === 422
+    ? formatValidationError(data as ApiValidationError)
+    : undefined;
 }
 
 async function performRequest(
@@ -164,7 +176,9 @@ async function performRequest(
   body: unknown,
   token: string | null,
 ): Promise<Response> {
-  const credentials: RequestCredentials = url.startsWith("/") ? "same-origin" : "omit";
+  const credentials: RequestCredentials = url.startsWith("/")
+    ? "same-origin"
+    : "omit";
 
   return fetch(url, {
     method,
@@ -175,11 +189,16 @@ async function performRequest(
   });
 }
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export async function apiRequest<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<T> {
   const { method = "GET", query, body, skipAuthRefresh = false } = options;
   const normalizedPath = normalizePath(path);
   const requestPath = withQuery(normalizedPath, query);
-  const url = isFrontendProxyPath(normalizedPath) ? requestPath : `${getApiBaseUrl()}${requestPath}`;
+  const url = isFrontendProxyPath(normalizedPath)
+    ? requestPath
+    : `${getApiBaseUrl()}${requestPath}`;
   const token = getAccessToken();
 
   const response = await performRequest(method, url, body, token);
@@ -189,18 +208,29 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     return payload as T;
   }
 
-  const canAttemptRefresh = !skipAuthRefresh && !shouldSkipRefresh(normalizedPath) && response.status === 401;
+  const canAttemptRefresh =
+    !skipAuthRefresh &&
+    !shouldSkipRefresh(normalizedPath) &&
+    response.status === 401;
   if (canAttemptRefresh) {
     const freshAccessToken = await refreshAccessToken();
     if (freshAccessToken) {
-      const retriedResponse = await performRequest(method, url, body, freshAccessToken);
+      const retriedResponse = await performRequest(
+        method,
+        url,
+        body,
+        freshAccessToken,
+      );
       const retryPayload = await parseResponsePayload(retriedResponse);
 
       if (retriedResponse.ok) {
         return retryPayload as T;
       }
 
-      const message = getResponseErrorMessage(retriedResponse.status, retryPayload);
+      const message = getResponseErrorMessage(
+        retriedResponse.status,
+        retryPayload,
+      );
       throw new ApiError(retriedResponse.status, retryPayload, message);
     }
 
@@ -216,13 +246,20 @@ function isFrontendProxyPath(path: string) {
   return path.startsWith("/api/") && !path.startsWith("/api/v1/");
 }
 
-function formatApiErrorMessage(status: number, code: string, data: unknown): string {
+function formatApiErrorMessage(
+  status: number,
+  code: string,
+  data: unknown,
+): string {
   if (typeof data === "object" && data !== null) {
     const record = data as Record<string, unknown>;
     if (typeof record.detail === "string" && record.detail.trim().length > 0) {
       return record.detail;
     }
-    if (typeof record.message === "string" && record.message.trim().length > 0) {
+    if (
+      typeof record.message === "string" &&
+      record.message.trim().length > 0
+    ) {
       return record.message;
     }
   }
@@ -246,12 +283,43 @@ function extractErrorCode(status: number, data: unknown): string {
   return ERROR_CODE_BY_STATUS[status] ?? "request_failed";
 }
 
-export function formatValidationError(error: ApiValidationError | undefined): string {
-  if (!error?.detail || error.detail.length === 0) {
+export function formatValidationError(
+  error: ApiValidationError | undefined,
+): string {
+  if (!error || typeof error !== "object") {
     return "Validation failed";
   }
 
-  return error.detail
-    .map((item) => `${item.loc.join(".")}: ${item.msg}`)
-    .join("; ");
+  const record = error as Record<string, unknown>;
+  const detail = record.detail;
+
+  if (typeof detail === "string" && detail.trim().length > 0) {
+    return detail;
+  }
+
+  if (Array.isArray(detail) && detail.length > 0) {
+    return detail
+      .map((item) => {
+        if (!item || typeof item !== "object") {
+          return "";
+        }
+        const typedItem = item as { loc?: unknown; msg?: unknown };
+        const location = Array.isArray(typedItem.loc)
+          ? typedItem.loc.map((part) => String(part)).join(".")
+          : "field";
+        const message =
+          typeof typedItem.msg === "string" && typedItem.msg.trim().length > 0
+            ? typedItem.msg
+            : "Invalid value";
+        return `${location}: ${message}`;
+      })
+      .filter((part) => part.length > 0)
+      .join("; ");
+  }
+
+  if (typeof record.message === "string" && record.message.trim().length > 0) {
+    return record.message;
+  }
+
+  return "Validation failed";
 }

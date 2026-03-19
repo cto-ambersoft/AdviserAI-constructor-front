@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/api/client";
+import { ApiError, apiRequest } from "@/lib/api/client";
 import type {
   AnalysisRunsResponse,
   PersonalAnalysisDefaultsRead,
@@ -32,7 +32,17 @@ export async function getPersonalAnalysisDefaults() {
 }
 
 export async function listPersonalAnalysisProfiles() {
-  return apiRequest<PersonalAnalysisProfileRead[]>("/api/v1/analysis/personal/profiles");
+  try {
+    return await apiRequest<PersonalAnalysisProfileRead[]>(
+      "/api/v1/analysis/personal/profiles",
+    );
+  } catch (error) {
+    // Some backend versions can respond with 404 when user has no profiles yet.
+    if (error instanceof ApiError && error.status === 404) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 export async function createPersonalAnalysisProfile(

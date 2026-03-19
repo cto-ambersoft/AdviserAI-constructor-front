@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthBootstrap } from "@/components/auth/auth-bootstrap";
+import { Toaster } from "@/components/ui/sonner";
 import { TradingStoreProvider } from "@/providers/trading-store-provider";
 
 const geistSans = Geist({
@@ -37,6 +38,7 @@ export default function RootLayout({
         <TradingStoreProvider>
           <AuthBootstrap />
           {children}
+          <Toaster />
         </TradingStoreProvider>
       </body>
     </html>

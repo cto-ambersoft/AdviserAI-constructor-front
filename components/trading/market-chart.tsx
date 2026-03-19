@@ -69,7 +69,13 @@ function formatLegendTime(time: Time | undefined) {
   if (typeof time === "string") {
     return new Date(time).toLocaleString();
   }
-  if (time && typeof time === "object" && "year" in time && "month" in time && "day" in time) {
+  if (
+    time &&
+    typeof time === "object" &&
+    "year" in time &&
+    "month" in time &&
+    "day" in time
+  ) {
     return `${time.year}-${String(time.month).padStart(2, "0")}-${String(time.day).padStart(2, "0")}`;
   }
   return "";
@@ -122,8 +128,16 @@ export function MarketChart({
         attributionLogo: false,
       },
       grid: {
-        vertLines: { visible: true, color: CHART_COLORS.grid, style: LineStyle.Dotted },
-        horzLines: { visible: true, color: CHART_COLORS.grid, style: LineStyle.Dotted },
+        vertLines: {
+          visible: true,
+          color: CHART_COLORS.grid,
+          style: LineStyle.Dotted,
+        },
+        horzLines: {
+          visible: true,
+          color: CHART_COLORS.grid,
+          style: LineStyle.Dotted,
+        },
       },
       crosshair: {
         mode: CrosshairMode.Normal,
@@ -193,7 +207,13 @@ export function MarketChart({
     });
     markerPluginRef.current = createSeriesMarkers(series, []);
 
-    const handleCrosshairMove = (param: Parameters<IChartApi["subscribeCrosshairMove"]>[0] extends (arg: infer P) => void ? P : never) => {
+    const handleCrosshairMove = (
+      param: Parameters<IChartApi["subscribeCrosshairMove"]>[0] extends (
+        arg: infer P,
+      ) => void
+        ? P
+        : never,
+    ) => {
       const candleSeries = candleSeriesRef.current;
       if (!candleSeries) {
         return;
@@ -312,7 +332,10 @@ export function MarketChart({
       <div ref={containerRef} className="h-full w-full" />
       <div className="pointer-events-none absolute left-2 top-2 z-10 rounded-md border border-border/70 bg-background/75 px-2 py-1.5 text-xs backdrop-blur">
         <p ref={legendPrimaryRef} className="font-medium text-foreground" />
-        <p ref={legendSecondaryRef} className="text-[11px] text-muted-foreground" />
+        <p
+          ref={legendSecondaryRef}
+          className="text-[11px] text-muted-foreground"
+        />
       </div>
     </div>
   );

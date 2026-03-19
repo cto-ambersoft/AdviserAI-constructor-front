@@ -11,12 +11,21 @@ export async function getMarketOhlcv(params: {
   timeframe: string;
   bars: number;
 }) {
+  const query: {
+    exchange_name?: string;
+    symbol: string;
+    timeframe: string;
+    bars: number;
+  } = {
+    symbol: params.symbol,
+    timeframe: params.timeframe,
+    bars: params.bars,
+  };
+  if (params.exchange_name) {
+    query.exchange_name = params.exchange_name;
+  }
+
   return apiRequest<MarketOhlcvResponse>("/api/v1/market/ohlcv", {
-    query: {
-      exchange_name: params.exchange_name ?? "bybit",
-      symbol: params.symbol,
-      timeframe: params.timeframe,
-      bars: params.bars,
-    },
+    query,
   });
 }

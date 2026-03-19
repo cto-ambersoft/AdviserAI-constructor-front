@@ -55,6 +55,7 @@ import {
   type AnalysisRun,
   type SpotOrderCreateRequest,
 } from "@/lib/api";
+import { notifyError, notifyInfo, notifyWarning } from "@/lib/notifications";
 import { mapMarketRowsToCandles } from "@/lib/trading/mappers";
 import { useAuthStore } from "@/stores/auth-store";
 import { useTradingStore } from "@/providers/trading-store-provider";
@@ -119,9 +120,11 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
   const [isLoading, setIsLoading] = useState(false);
   const [pollingEnabled, setPollingEnabled] = useState(true);
   const [pollIntervalSec, setPollIntervalSec] = useState(5);
+  const [barsInput, setBarsInput] = useState(String(bars));
+  const [pollIntervalInput, setPollIntervalInput] = useState(
+    String(pollIntervalSec),
+  );
   const [armingEnabled, setArmingEnabled] = useState(false);
-  const [message, setMessage] = useState<string>("");
-  const [errorMessage, setErrorMessage] = useState<string>("");
   const [editingAccountId, setEditingAccountId] = useState<number | null>(null);
   const [editLabel, setEditLabel] = useState("");
   const [editMode, setEditMode] = useState<"demo" | "real">("demo");
@@ -185,6 +188,22 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
   const lastSpotSlowRefreshAtRef = useRef(0);
   const spotBackoffMsRef = useRef(0);
 
+  const setMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifyInfo(normalized);
+  }, []);
+
+  const setErrorMessage = useCallback((message: string) => {
+    const normalized = message.trim();
+    if (!normalized) {
+      return;
+    }
+    notifyError(normalized);
+  }, []);
+
   const selectedAccount = useMemo(() => {
     if (!selectedAccountId) {
       return null;
@@ -237,6 +256,14 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
   }, [orderForm]);
 
   useEffect(() => {
+    setBarsInput(String(bars));
+  }, [bars]);
+
+  useEffect(() => {
+    setPollIntervalInput(String(pollIntervalSec));
+  }, [pollIntervalSec]);
+
+  useEffect(() => {
     if (!latestAnalysisRun || latestAnalysisRun._id === lastAppliedAnalysisId) {
       return;
     }
@@ -269,13 +296,17 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
     setIsLoading(true);
     setErrorMessage("");
     try {
-      const [marketMetaResult, accountsMetaResult, accountsResult, analysisResult] =
-        await Promise.allSettled([
-          getMarketMeta(),
-          getExchangeAccountsMeta(),
-          listExchangeAccounts(),
-          listAnalysisRuns({ limit: 1 }),
-        ]);
+      const [
+        marketMetaResult,
+        accountsMetaResult,
+        accountsResult,
+        analysisResult,
+      ] = await Promise.allSettled([
+        getMarketMeta(),
+        getExchangeAccountsMeta(),
+        listExchangeAccounts(),
+        listAnalysisRuns({ limit: 1 }),
+      ]);
 
       if (marketMetaResult.status === "fulfilled") {
         const nextMarketMeta = marketMetaResult.value;
@@ -319,9 +350,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
         );
       }
     } catch (error) {
-      setErrorMessage(
-        toUserErrorMessage(error, "Failed to load metadata"),
-      );
+      setErrorMessage(toUserErrorMessage(error, "Failed to load metadata"));
     } finally {
       setIsLoading(false);
     }
@@ -355,7 +384,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
       );
       spotBackoffMsRef.current = nextBackoffMs;
       nextSpotRefreshAtRef.current = Date.now() + nextBackoffMs;
-      setMessage(
+      notifyWarning(
         `Rate limited by exchange API. Next retry in ${Math.ceil(nextBackoffMs / 1000)}s.`,
       );
       return true;
@@ -364,7 +393,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
       const fallbackBackoffMs = 10_000;
       spotBackoffMsRef.current = fallbackBackoffMs;
       nextSpotRefreshAtRef.current = Date.now() + fallbackBackoffMs;
-      setMessage("Exchange backend temporarily unavailable. Retrying soon.");
+      notifyWarning("Exchange backend temporarily unavailable. Retrying soon.");
       return true;
     }
     return false;
@@ -528,7 +557,10 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
           }),
         ]);
         if (openOrders.status === "fulfilled") {
-          setSpotWidgets((prev) => ({ ...prev, openOrders: openOrders.value.orders }));
+          setSpotWidgets((prev) => ({
+            ...prev,
+            openOrders: openOrders.value.orders,
+          }));
         } else {
           widgetErrors.push(openOrders.reason);
         }
@@ -623,7 +655,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
         }
       }
     },
-    [applySpotBackoff, symbol, toUserErrorMessage],
+    [applySpotBackoff, setErrorMessage, symbol, toUserErrorMessage],
   );
 
   const triggerImmediateTradingRefresh = useCallback(
@@ -758,7 +790,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
       account_id: selectedAccountId,
       symbol,
       side: orderForm.side,
-      order_type: orderForm.order_type,
+      type: orderForm.order_type === "limit" ? "limit" : "market",
       amount: Number(orderForm.amount),
       price:
         orderForm.order_type === "limit" ? Number(orderForm.price || 0) : null,
@@ -898,17 +930,6 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
             </Button>
           </div>
         </div>
-      ) : null}
-
-      {errorMessage ? (
-        <p className="mb-3 rounded-md border border-destructive/35 bg-destructive/12 px-3 py-2 text-sm text-destructive">
-          {errorMessage}
-        </p>
-      ) : null}
-      {message ? (
-        <p className="mb-3 rounded-md border border-emerald-400/30 bg-emerald-500/10 px-3 py-2 text-sm text-emerald-300">
-          {message}
-        </p>
       ) : null}
 
       <div
@@ -1274,8 +1295,23 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
                       type="number"
                       min={marketMeta?.min_bars ?? 50}
                       max={marketMeta?.max_bars ?? 5000}
-                      value={bars}
-                      onChange={(event) => setBars(Number(event.target.value))}
+                      value={barsInput}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        setBarsInput(next);
+                        const parsed = Number(next);
+                        if (Number.isFinite(parsed)) {
+                          setBars(parsed);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (
+                          !barsInput.trim() ||
+                          !Number.isFinite(Number(barsInput))
+                        ) {
+                          setBarsInput(String(bars));
+                        }
+                      }}
                     />
                     <label className="flex items-center gap-2 text-sm">
                       <input
@@ -1292,16 +1328,39 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
                       type="number"
                       min={3}
                       max={10}
-                      value={pollIntervalSec}
-                      onChange={(event) =>
-                        setPollIntervalSec(Number(event.target.value))
-                      }
+                      value={pollIntervalInput}
+                      onChange={(event) => {
+                        const next = event.target.value;
+                        setPollIntervalInput(next);
+                        const parsed = Number(next);
+                        if (Number.isFinite(parsed)) {
+                          setPollIntervalSec(parsed);
+                        }
+                      }}
+                      onBlur={() => {
+                        if (
+                          !pollIntervalInput.trim() ||
+                          !Number.isFinite(Number(pollIntervalInput))
+                        ) {
+                          setPollIntervalInput(String(pollIntervalSec));
+                        }
+                      }}
                     />
                   </div>
-                  <MarketChart
-                    candles={candles}
-                    height={isTradeMode ? 360 : 420}
-                  />
+                  <div className="relative">
+                    <MarketChart
+                      candles={candles}
+                      height={isTradeMode ? 360 : 420}
+                    />
+                    {isLoading && candles.length === 0 ? (
+                      <div className="absolute inset-0 z-10 flex items-center justify-center rounded-md bg-background/60 backdrop-blur-[1px]">
+                        <p className="inline-flex items-center text-sm text-muted-foreground">
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Loading market chart...
+                        </p>
+                      </div>
+                    ) : null}
+                  </div>
                 </CardContent>
               </Card>
 
