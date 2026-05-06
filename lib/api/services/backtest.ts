@@ -1,5 +1,6 @@
 import { apiRequest } from "@/lib/api/client";
 import type {
+  AiForecastBacktestFilesResponse,
   AtrOrderBlockRequest,
   BacktestCatalogResponse,
   BacktestResponse,
@@ -7,11 +8,16 @@ import type {
   IntradayMomentumRequest,
   KnifeCatcherRequest,
   PortfolioBacktestRequest,
+  VwapBacktestResponse,
   VwapBacktestRequest,
 } from "@/lib/api/types";
 
 export async function getBacktestCatalog() {
   return apiRequest<BacktestCatalogResponse>("/api/v1/backtest/catalog");
+}
+
+export async function getAiForecastBacktestFiles() {
+  return apiRequest<AiForecastBacktestFilesResponse>("/api/v1/backtest/ai-forecast-files");
 }
 
 export async function getVwapIndicators() {
@@ -27,7 +33,7 @@ export async function getVwapRegimes() {
 }
 
 export async function runVwapBacktest(payload: VwapBacktestRequest) {
-  return apiRequest<BacktestResponse>("/api/v1/backtest/vwap", {
+  return apiRequest<VwapBacktestResponse>("/api/v1/backtest/vwap", {
     method: "POST",
     body: payload,
   });

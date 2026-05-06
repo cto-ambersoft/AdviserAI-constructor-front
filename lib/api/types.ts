@@ -21,7 +21,13 @@ export type StrategyUpdateRequest = {
   config?: JsonRecord | null;
 };
 
-export type VwapBacktestRequest = components["schemas"]["VwapBacktestRequest"];
+type RawVwapBacktestRequest = components["schemas"]["VwapBacktestRequest"];
+export type VwapBacktestRequest = RawVwapBacktestRequest & {
+  run_with_ai?: boolean;
+  ai_forecast_file?: string | null;
+  ai_bull_confidence_threshold?: number | null;
+  ai_bear_confidence_threshold?: number | null;
+};
 export type AtrOrderBlockRequest =
   components["schemas"]["AtrOrderBlockRequest"];
 export type KnifeCatcherRequest =
@@ -64,6 +70,25 @@ export type BacktestSummary = {
   final_balance?: number;
   total_pnl?: number;
   avg_risk_per_trade?: number;
+  r_squared?: number;
+  r_cumulative?: number;
+  avg_r?: number;
+  total_r?: number;
+  max_drawdown_pct?: number;
+  annualized_return_pct?: number;
+  calmar_ratio?: number;
+  [k: string]: unknown;
+};
+
+export type BacktestTrade = JsonRecord & {
+  r_multiple?: number | null;
+};
+
+export type BacktestChartPoints = {
+  ohlcv?: JsonRecord[];
+  equity_curve?: EquityPoint[];
+  r_cumulative_curve?: number[];
+  r_equity_curve?: number[];
   [k: string]: unknown;
 };
 
@@ -72,13 +97,31 @@ export type BacktestResponse = Omit<
   "summary" | "trades" | "chart_points"
 > & {
   summary: BacktestSummary;
-  trades: JsonRecord[];
-  chart_points: {
-    ohlcv?: JsonRecord[];
-    equity_curve?: EquityPoint[];
-    [k: string]: unknown;
-  };
+  trades: BacktestTrade[];
+  chart_points: BacktestChartPoints;
 };
+export type VwapAiComparisonDelta = {
+  total_pnl_delta: number;
+  win_rate_delta: number;
+  trades_delta: number;
+  profit_factor_delta?: number;
+  sharpe_proxy_delta?: number;
+  max_drawdown_delta?: number;
+  calmar_ratio_delta?: number;
+};
+export type AiForecastBacktestFile = {
+  file_name: string;
+  modified_at_utc: string;
+};
+export type AiForecastBacktestFilesResponse = {
+  files: AiForecastBacktestFile[];
+};
+export type VwapAiComparisonResponse = {
+  result: BacktestResponse;
+  baseline: BacktestResponse;
+  comparison: VwapAiComparisonDelta;
+};
+export type VwapBacktestResponse = BacktestResponse | VwapAiComparisonResponse;
 type RawBacktestCatalogResponse =
   components["schemas"]["BacktestCatalogResponse"];
 export type BacktestCatalogResponse = Omit<
@@ -118,6 +161,11 @@ export type LivePaperPlayStopResponse =
 export type AutoTradeConfigUpsertRequest =
   components["schemas"]["AutoTradeConfigUpsertRequest"];
 export type AutoTradeConfigRead = components["schemas"]["AutoTradeConfigRead"];
+export type StrategyProfileConfig = components["schemas"]["StrategyProfileConfig"];
+export type StrategyProfileTPLevel =
+  components["schemas"]["StrategyProfileTPLevel"];
+export type StrategyProfileWatcher =
+  components["schemas"]["StrategyProfileWatcher"];
 export type AutoTradeConfigsResponse =
   components["schemas"]["AutoTradeConfigsResponse"];
 export type AutoTradePlayStopResponse =
@@ -150,7 +198,10 @@ export type MarketOhlcvResponse = components["schemas"]["MarketOhlcvResponse"];
 export type CandleInput = components["schemas"]["CandleInput"];
 
 export type TokenResponse = components["schemas"]["TokenResponse"];
-export type UserRead = components["schemas"]["UserRead"];
+type RawUserRead = components["schemas"]["UserRead"];
+export type UserRead = RawUserRead & {
+  is_admin?: boolean;
+};
 export type AuthTokens = AuthTokenBundle;
 
 export type AuthUserResponse = {
@@ -426,4 +477,151 @@ export type PersonalAnalysisHistoryRead = {
   core_completed_at: string | null;
   created_at: string;
   updated_at: string;
+};
+
+export type AdminRuntimePositionsStatus = "all" | "open";
+
+export type AdminRuntimeQuery = {
+  include_inactive_users?: boolean;
+  positions_status?: AdminRuntimePositionsStatus;
+  after_user_id?: number;
+  users_limit?: number;
+  include_details?: boolean;
+  strategies_limit_per_user?: number;
+  configs_limit_per_user?: number;
+  positions_limit_per_user?: number;
+};
+
+export type AdminRuntimeSummaryRead = {
+  total_users: number;
+  active_users: number;
+  admin_users: number;
+  total_strategies: number;
+  active_strategies: number;
+  total_auto_trade_configs: number;
+  running_auto_trade_configs: number;
+  total_auto_trade_positions: number;
+  open_auto_trade_positions: number;
+  running_live_paper_profiles: number;
+};
+
+export type AdminRuntimePageRead = {
+  users_limit: number;
+  after_user_id?: number | null;
+  next_after_user_id?: number | null;
+  has_more?: boolean;
+};
+
+export type AdminUserRead = {
+  id: number;
+  email: string;
+  is_active: boolean;
+  is_admin: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminUserRuntimeStatsRead = {
+  total_strategies: number;
+  active_strategies: number;
+  auto_trade_configs: number;
+  running_auto_trade_configs: number;
+  auto_trade_positions: number;
+  open_auto_trade_positions: number;
+  live_paper_running?: boolean;
+};
+
+export type AdminStrategyRead = {
+  id: number;
+  user_id: number;
+  name: string;
+  strategy_type: string;
+  version: string;
+  description: string | null;
+  is_active: boolean;
+  config: JsonRecord;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminAutoTradeConfigRead = {
+  id: number;
+  user_id: number;
+  profile_id: number;
+  account_id: number;
+  enabled: boolean;
+  is_running: boolean;
+  position_size_usdt: number;
+  leverage: number;
+  min_confidence_pct: number;
+  fast_close_confidence_pct: number;
+  confirm_reports_required: number;
+  risk_mode: string;
+  sl_pct: number;
+  tp_pct: number;
+  last_started_at: string | null;
+  last_stopped_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminAutoTradePositionRead = {
+  id: number;
+  user_id: number;
+  config_id: number;
+  profile_id: number;
+  account_id: number;
+  symbol: string;
+  side: string;
+  status: string;
+  entry_price: number;
+  quantity: number;
+  position_size_usdt: number;
+  leverage: number;
+  tp_price: number;
+  sl_price: number;
+  entry_confidence_pct: number;
+  opened_at: string;
+  closed_at: string | null;
+  close_reason: string | null;
+  close_price: number | null;
+  open_order_id: string | null;
+  close_order_id: string | null;
+  open_history_id: number | null;
+  close_history_id: number | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminLivePaperProfileRead = {
+  id: number;
+  user_id: number;
+  strategy_id: number;
+  strategy_revision: number;
+  is_running: boolean;
+  total_balance_usdt: number;
+  per_trade_usdt: number;
+  last_processed_at: string | null;
+  last_poll_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+export type AdminUserRuntimeRead = {
+  user: AdminUserRead;
+  stats: AdminUserRuntimeStatsRead;
+  strategies_truncated?: boolean;
+  auto_trade_configs_truncated?: boolean;
+  auto_trade_positions_truncated?: boolean;
+  strategies?: AdminStrategyRead[];
+  auto_trade_configs?: AdminAutoTradeConfigRead[];
+  auto_trade_positions?: AdminAutoTradePositionRead[];
+  live_paper_profile?: AdminLivePaperProfileRead | null;
+};
+
+export type AdminRuntimeSnapshotResponse = {
+  generated_at: string;
+  summary: AdminRuntimeSummaryRead;
+  page: AdminRuntimePageRead;
+  users?: AdminUserRuntimeRead[];
 };

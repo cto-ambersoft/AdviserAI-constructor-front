@@ -13,6 +13,7 @@ import {
   getAutoTradeValidation,
   normalizeRiskMode,
   isSupportedAutoTradeExchange,
+  buildStrategyProfilePayload,
 } from "@/components/auto-trade/utils";
 import type { AutoTradeFormState } from "@/components/auto-trade/types";
 import { Badge } from "@/components/ui/badge";
@@ -36,6 +37,7 @@ import {
   listAutoTradeConfigs,
   listExchangeAccounts,
   listPersonalAnalysisProfiles,
+  listStrategies,
   playAutoTrade,
   stopAutoTrade,
   upsertAutoTradeConfig,
@@ -48,6 +50,7 @@ import {
   type ExchangeAccountRead,
   type MarketMetaResponse,
   type PersonalAnalysisProfileRead,
+  type StrategyRead,
 } from "@/lib/api";
 import {
   mapAccountTradesToChartMarkers,
@@ -67,6 +70,7 @@ const FALLBACK_BARS = 300;
 export function AutoTradeDashboard() {
   const [profiles, setProfiles] = useState<PersonalAnalysisProfileRead[]>([]);
   const [accounts, setAccounts] = useState<ExchangeAccountRead[]>([]);
+  const [strategies, setStrategies] = useState<StrategyRead[]>([]);
   const [configs, setConfigs] = useState<AutoTradeConfigRead[]>([]);
   const [marketMeta, setMarketMeta] = useState<MarketMetaResponse | null>(null);
   const [selectedAccountId, setSelectedAccountId] = useState<number | null>(
@@ -93,6 +97,7 @@ export function AutoTradeDashboard() {
   const [bars, setBars] = useState(FALLBACK_BARS);
   const [isPageLoading, setIsPageLoading] = useState(true);
   const [isMetaLoading, setIsMetaLoading] = useState(true);
+  const [isStrategiesLoading, setIsStrategiesLoading] = useState(true);
   const [isConfigLoading, setIsConfigLoading] = useState(false);
   const [isRuntimeLoading, setIsRuntimeLoading] = useState(false);
   const [isEventsLoading, setIsEventsLoading] = useState(false);
@@ -102,6 +107,7 @@ export function AutoTradeDashboard() {
   const [isSaving, setIsSaving] = useState(false);
   const [isPlayBusy, setIsPlayBusy] = useState(false);
   const [isStopBusy, setIsStopBusy] = useState(false);
+  const [playBlockerMessage, setPlayBlockerMessage] = useState("");
 
   const requestIdRef = useRef(0);
   const selectedFormAccount = useMemo(
@@ -171,6 +177,10 @@ export function AutoTradeDashboard() {
     [form, selectedFormAccount],
   );
   const canPlayStop = selectedAccountId !== null && hasConfigForScope;
+  const atrStrategies = useMemo(
+    () => strategies.filter((item) => item.strategy_type === "atr_order_block"),
+    [strategies],
+  );
 
   const loadScoped = useCallback(
     async ({
@@ -356,13 +366,21 @@ export function AutoTradeDashboard() {
   const loadPage = useCallback(async () => {
     setIsPageLoading(true);
     setIsMetaLoading(true);
+    setIsStrategiesLoading(true);
     try {
-      const [configsResult, profilesResult, accountsResult, marketMetaResult] =
+      const [
+        configsResult,
+        profilesResult,
+        accountsResult,
+        marketMetaResult,
+        strategiesResult,
+      ] =
         await Promise.allSettled([
           listAutoTradeConfigs(),
           listPersonalAnalysisProfiles(),
           listExchangeAccounts(),
           getMarketMeta(),
+          listStrategies({ strategy_type: "atr_order_block" }),
         ]);
       if (configsResult.status !== "fulfilled") {
         throw configsResult.reason;
@@ -383,8 +401,11 @@ export function AutoTradeDashboard() {
         profilesResult.status === "fulfilled" ? profilesResult.value : [];
       const nextAccounts =
         accountsResult.status === "fulfilled" ? accountsResult.value : [];
+      const nextStrategies =
+        strategiesResult.status === "fulfilled" ? strategiesResult.value : [];
       setProfiles(nextProfiles);
       setAccounts(nextAccounts);
+      setStrategies(nextStrategies);
       if (marketMetaResult.status === "fulfilled") {
         setMarketMeta(marketMetaResult.value);
         setTimeframe(
@@ -412,6 +433,7 @@ export function AutoTradeDashboard() {
     } finally {
       setIsPageLoading(false);
       setIsMetaLoading(false);
+      setIsStrategiesLoading(false);
     }
   }, []);
 
@@ -423,6 +445,7 @@ export function AutoTradeDashboard() {
     if (selectedAccountId === null || isPageLoading) {
       return;
     }
+    setPlayBlockerMessage("");
     void loadScoped({
       accountId: selectedAccountId,
       symbol: scopeSymbol,
@@ -454,7 +477,14 @@ export function AutoTradeDashboard() {
     }
 
     setIsSaving(true);
+    setPlayBlockerMessage("");
     try {
+      const atrOverrides = Object.fromEntries(
+        Object.entries(form.strategy_overrides).filter(([, value]) =>
+          Number.isFinite(value),
+        ),
+      );
+      const strategyProfilePayload = buildStrategyProfilePayload(form.strategy_profile);
       const payload = {
         enabled: form.enabled,
         profile_id: form.profile_id as number,
@@ -467,6 +497,19 @@ export function AutoTradeDashboard() {
         risk_mode: normalizeRiskMode(form.risk_mode),
         sl_pct: form.sl_pct,
         tp_pct: form.tp_pct,
+        signal_source: form.signal_source,
+        timeframe: form.timeframe.trim(),
+        bars: Math.round(form.bars),
+        poll_interval_seconds: Math.round(form.poll_interval_seconds),
+        ...(form.signal_source === "strategy_atr_block"
+          ? {
+              strategy_id: form.strategy_id as number,
+              strategy_overrides: atrOverrides,
+            }
+          : {}),
+        ...(strategyProfilePayload !== null
+          ? { strategy_profile: strategyProfilePayload }
+          : {}),
       };
 
       const savedConfig = await upsertAutoTradeConfig(payload);
@@ -524,6 +567,7 @@ export function AutoTradeDashboard() {
       return;
     }
     setIsPlayBusy(true);
+    setPlayBlockerMessage("");
     try {
       await playAutoTrade({ account_id: selectedAccountId });
       await loadScoped({
@@ -536,6 +580,13 @@ export function AutoTradeDashboard() {
       });
       notifySuccess("Auto-trade started.");
     } catch (error) {
+      if (error instanceof ApiError && isAutoRunAccountBusyError(error)) {
+        const blockerMessage = extractApiErrorDetail(error);
+        setPlayBlockerMessage(
+          blockerMessage ||
+            "This account is already busy with an active auto-run. Stop current run first.",
+        );
+      }
       notifyError(toUserError(error, "Failed to start auto-trade."));
     } finally {
       setIsPlayBusy(false);
@@ -558,6 +609,7 @@ export function AutoTradeDashboard() {
     setIsStopBusy(true);
     try {
       await stopAutoTrade({ account_id: selectedAccountId });
+      setPlayBlockerMessage("");
       await loadScoped({
         accountId: selectedAccountId,
         symbol: scopeSymbol,
@@ -588,7 +640,8 @@ export function AutoTradeDashboard() {
         <div>
           <h1 className="text-xl font-semibold tracking-tight">Auto Trade</h1>
           <p className="text-sm text-muted-foreground">
-            Create and manage auto-trade config scoped by exchange account.
+            Live Auto-Trade runtime (stateful). Use Backtest and Live Paper as safe
+            steps before enabling real execution.
           </p>
         </div>
         <Button
@@ -698,6 +751,19 @@ export function AutoTradeDashboard() {
                 {isStopBusy ? "Stopping..." : "Stop"}
               </Button>
             </div>
+            {playBlockerMessage ? (
+              <div className="rounded-md border border-destructive/35 bg-destructive/10 p-3">
+                <p className="text-sm text-destructive">{playBlockerMessage}</p>
+                <Button
+                  className="mt-2"
+                  variant="destructive"
+                  onClick={() => void handleStop()}
+                  disabled={!canPlayStop || isStopBusy}
+                >
+                  {isStopBusy ? "Stopping..." : "Stop current"}
+                </Button>
+              </div>
+            ) : null}
           </CardContent>
         </Card>
       </div>
@@ -743,6 +809,8 @@ export function AutoTradeDashboard() {
                 form={form}
                 profiles={profiles}
                 accounts={accounts}
+                strategies={atrStrategies}
+                isStrategiesLoading={isStrategiesLoading}
                 isBusy={isSaving}
                 validationMessage={validation.message}
                 onChange={(updater) => setForm((prev) => updater(prev))}
@@ -913,8 +981,15 @@ function supportedAccountsFrom(accounts: ExchangeAccountRead[]) {
 
 function toUserError(error: unknown, fallback: string): string {
   if (error instanceof ApiError) {
+    const detail = extractApiErrorDetail(error);
+    if (detail) {
+      return detail;
+    }
     if (error.status === 404) {
-      return "Resource not found for selected account scope.";
+      return "Requested profile, strategy, or exchange account was not found.";
+    }
+    if (error.status === 422) {
+      return "Business validation failed. Check config values and account runtime state.";
     }
     if (typeof error.message === "string" && error.message.trim().length > 0) {
       return error.message;
@@ -929,4 +1004,32 @@ function toUserError(error: unknown, fallback: string): string {
 
 function clampBars(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, Math.round(value)));
+}
+
+function extractApiErrorDetail(error: ApiError): string {
+  if (typeof error.data !== "object" || error.data === null) {
+    return "";
+  }
+  const record = error.data as Record<string, unknown>;
+  const detail = record.detail;
+  if (typeof detail === "string" && detail.trim().length > 0) {
+    return detail;
+  }
+  const message = record.message;
+  if (typeof message === "string" && message.trim().length > 0) {
+    return message;
+  }
+  return "";
+}
+
+function isAutoRunAccountBusyError(error: unknown): boolean {
+  if (!(error instanceof ApiError) || error.status !== 422) {
+    return false;
+  }
+  const source = `${error.code} ${error.message} ${extractApiErrorDetail(error)}`.toLowerCase();
+  return (
+    source.includes("already") &&
+    (source.includes("active") || source.includes("running")) &&
+    (source.includes("auto") || source.includes("run") || source.includes("account"))
+  );
 }

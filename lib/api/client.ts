@@ -47,7 +47,7 @@ export function getApiBaseUrl(): string {
 
 function withQuery(
   path: string,
-  query?: Record<string, string | number | boolean | undefined>,
+  query?: Record<string, string | number | boolean | null | undefined>,
 ) {
   if (!query) {
     return path;
@@ -55,7 +55,7 @@ function withQuery(
 
   const searchParams = new URLSearchParams();
   for (const [key, rawValue] of Object.entries(query)) {
-    if (rawValue === undefined) {
+    if (rawValue === undefined || rawValue === null) {
       continue;
     }
     searchParams.set(key, String(rawValue));
@@ -75,9 +75,10 @@ function normalizePath(path: string): string {
 
 type RequestOptions = {
   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-  query?: Record<string, string | number | boolean | undefined>;
+  query?: Record<string, string | number | boolean | null | undefined>;
   body?: unknown;
   skipAuthRefresh?: boolean;
+  signal?: AbortSignal;
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -175,6 +176,7 @@ async function performRequest(
   url: string,
   body: unknown,
   token: string | null,
+  signal?: AbortSignal,
 ): Promise<Response> {
   const credentials: RequestCredentials = url.startsWith("/")
     ? "same-origin"
@@ -186,6 +188,7 @@ async function performRequest(
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials,
+    signal,
   });
 }
 
@@ -193,7 +196,13 @@ export async function apiRequest<T>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = "GET", query, body, skipAuthRefresh = false } = options;
+  const {
+    method = "GET",
+    query,
+    body,
+    skipAuthRefresh = false,
+    signal,
+  } = options;
   const normalizedPath = normalizePath(path);
   const requestPath = withQuery(normalizedPath, query);
   const url = isFrontendProxyPath(normalizedPath)
@@ -201,7 +210,7 @@ export async function apiRequest<T>(
     : `${getApiBaseUrl()}${requestPath}`;
   const token = getAccessToken();
 
-  const response = await performRequest(method, url, body, token);
+  const response = await performRequest(method, url, body, token, signal);
   const payload = await parseResponsePayload(response);
 
   if (response.ok) {
@@ -220,6 +229,7 @@ export async function apiRequest<T>(
         url,
         body,
         freshAccessToken,
+        signal,
       );
       const retryPayload = await parseResponsePayload(retriedResponse);
 

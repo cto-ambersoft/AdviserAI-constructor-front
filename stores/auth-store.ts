@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { clearAccessToken, setAccessToken } from "@/lib/auth/token-storage";
 import {
+  getAdminRuntimeSnapshot,
   logoutSession,
   me,
   signin,
@@ -19,11 +20,14 @@ type AuthState = {
   user: UserRead | null;
   status: AuthStatus;
   hasHydrated: boolean;
+  hasAdminAccess: boolean | null;
+  isAdminAccessLoading: boolean;
   setUser: (user: UserRead | null) => void;
   hydrate: () => Promise<void>;
   login: (data: SignInRequest) => Promise<void>;
   register: (data: SignUpRequest) => Promise<void>;
   logout: () => Promise<void>;
+  resolveAdminAccess: () => Promise<boolean>;
 };
 
 async function loadCurrentUser() {
@@ -31,14 +35,29 @@ async function loadCurrentUser() {
   return currentUser;
 }
 
-export const useAuthStore = create<AuthState>((set) => ({
+async function checkAdminAccess() {
+  await getAdminRuntimeSnapshot({
+    users_limit: 1,
+    include_details: false,
+    include_inactive_users: true,
+    positions_status: "all",
+  });
+}
+
+let adminAccessRequestId = 0;
+
+export const useAuthStore = create<AuthState>((set, get) => ({
   user: null,
   status: "idle",
   hasHydrated: false,
+  hasAdminAccess: null,
+  isAdminAccessLoading: false,
   setUser: (user) =>
     set(() => ({
       user,
       status: user ? "authenticated" : "anonymous",
+      hasAdminAccess: user ? null : false,
+      isAdminAccessLoading: false,
     })),
   hydrate: async () => {
     try {
@@ -48,9 +67,16 @@ export const useAuthStore = create<AuthState>((set) => ({
         status: "authenticated",
         hasHydrated: true,
       }));
+      void get().resolveAdminAccess();
     } catch {
       clearAccessToken();
-      set(() => ({ user: null, status: "anonymous", hasHydrated: true }));
+      set(() => ({
+        user: null,
+        status: "anonymous",
+        hasHydrated: true,
+        hasAdminAccess: false,
+        isAdminAccessLoading: false,
+      }));
     }
   },
   login: async (data) => {
@@ -61,7 +87,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: currentUser,
       status: "authenticated",
       hasHydrated: true,
+      hasAdminAccess: null,
     }));
+    void get().resolveAdminAccess();
   },
   register: async (data) => {
     const tokenResponse = await signup(data);
@@ -71,7 +99,9 @@ export const useAuthStore = create<AuthState>((set) => ({
       user: currentUser,
       status: "authenticated",
       hasHydrated: true,
+      hasAdminAccess: null,
     }));
+    void get().resolveAdminAccess();
   },
   logout: async () => {
     try {
@@ -80,7 +110,71 @@ export const useAuthStore = create<AuthState>((set) => ({
       // Keep client logout resilient if the network is temporarily unavailable.
     }
     clearAccessToken();
-    set(() => ({ user: null, status: "anonymous", hasHydrated: true }));
+    set(() => ({
+      user: null,
+      status: "anonymous",
+      hasHydrated: true,
+      hasAdminAccess: false,
+      isAdminAccessLoading: false,
+    }));
+  },
+  resolveAdminAccess: async () => {
+    const user = get().user;
+    if (!user) {
+      set(() => ({
+        hasAdminAccess: false,
+        isAdminAccessLoading: false,
+      }));
+      return false;
+    }
+
+    // Fast-path if backend already sent role flag.
+    if (user.is_admin === true) {
+      set(() => ({
+        hasAdminAccess: true,
+        isAdminAccessLoading: false,
+      }));
+      return true;
+    }
+
+    const requestId = ++adminAccessRequestId;
+    set(() => ({
+      isAdminAccessLoading: true,
+    }));
+
+    try {
+      await checkAdminAccess();
+
+      if (requestId !== adminAccessRequestId) {
+        return get().hasAdminAccess ?? false;
+      }
+
+      set(() => ({
+        hasAdminAccess: true,
+        isAdminAccessLoading: false,
+      }));
+      return true;
+    } catch (error) {
+      if (requestId !== adminAccessRequestId) {
+        return get().hasAdminAccess ?? false;
+      }
+
+      const apiError = error as ApiError;
+      if (typeof apiError?.status === "number" && apiError.status === 403) {
+        set(() => ({
+          hasAdminAccess: false,
+          isAdminAccessLoading: false,
+        }));
+        return false;
+      }
+
+      // Keep UX resilient on transient network issues.
+      set(() => ({
+        hasAdminAccess: false,
+        isAdminAccessLoading: false,
+      }));
+      return false;
+    }
   },
 }));
 

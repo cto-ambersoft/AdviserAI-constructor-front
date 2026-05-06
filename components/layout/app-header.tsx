@@ -9,17 +9,26 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 
-const NAV_LINKS = [
+const BASE_NAV_LINKS = [
   { href: "/strategy", label: "Strategy" },
   // { href: "/trade", label: "Trade" },
   { href: "/auto-trade", label: "Auto Trade" },
   { href: "/settings/connect-exchange", label: "Connect Exchange" },
 ];
 
+const ADMIN_NAV_LINKS = [
+  { href: "/admin/runtime", label: "Admin Runtime" },
+  { href: "/admin/ai-backtest-config", label: "AI Backtest Config" },
+];
+
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
+  const hasHydrated = useAuthStore((state) => state.hasHydrated);
+  const hasAdminAccess = useAuthStore((state) => state.hasAdminAccess);
+  const isAdminAccessLoading = useAuthStore((state) => state.isAdminAccessLoading);
+  const resolveAdminAccess = useAuthStore((state) => state.resolveAdminAccess);
   const logout = useAuthStore((state) => state.logout);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement | null>(null);
@@ -55,6 +64,30 @@ export function AppHeader() {
     }
     return email.slice(0, 1).toUpperCase();
   }, [user?.email]);
+  const canOpenAdminPages = user?.is_admin === true || hasAdminAccess === true;
+  const navLinks = useMemo(
+    () =>
+      canOpenAdminPages
+        ? [...BASE_NAV_LINKS, ...ADMIN_NAV_LINKS]
+        : BASE_NAV_LINKS,
+    [canOpenAdminPages],
+  );
+
+  useEffect(() => {
+    if (!hasHydrated || !user) {
+      return;
+    }
+    if (user.is_admin === true || hasAdminAccess !== null || isAdminAccessLoading) {
+      return;
+    }
+    void resolveAdminAccess();
+  }, [
+    hasAdminAccess,
+    hasHydrated,
+    isAdminAccessLoading,
+    resolveAdminAccess,
+    user,
+  ]);
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/90 bg-background/95 backdrop-blur-sm">
@@ -71,7 +104,7 @@ export function AppHeader() {
             />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
-            {NAV_LINKS.map((item) => {
+            {navLinks.map((item) => {
               const isActive =
                 pathname === item.href || pathname.startsWith(`${item.href}/`);
               return (
@@ -145,6 +178,30 @@ export function AppHeader() {
               >
                 Open Auto Trade
               </button>
+              {canOpenAdminPages ? (
+                <>
+                  <button
+                    type="button"
+                    className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      router.push("/admin/runtime");
+                    }}
+                  >
+                    Open Admin Runtime
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
+                    onClick={() => {
+                      setIsMenuOpen(false);
+                      router.push("/admin/ai-backtest-config");
+                    }}
+                  >
+                    Open AI Backtest Config
+                  </button>
+                </>
+              ) : null}
               <div className="my-1 h-px bg-border" />
               <button
                 type="button"

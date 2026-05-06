@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ColorType, LineSeries, LineStyle, createChart, type IChartApi } from "lightweight-charts";
 import type { UTCTimestamp } from "lightweight-charts";
 
@@ -10,8 +10,20 @@ type EquityCurvePoint = {
 };
 
 type EquityCurveChartProps = {
-  points: EquityCurvePoint[];
+  points?: EquityCurvePoint[];
+  series?: EquityCurveLine[];
   height?: number;
+};
+
+type EquityCurveLine = {
+  id: string;
+  label: string;
+  points: EquityCurvePoint[];
+  color?: string;
+  lineWidth?: 1 | 2 | 3 | 4;
+  lineStyle?: "solid" | "dashed" | "dotted";
+  priceLineVisible?: boolean;
+  lastValueVisible?: boolean;
 };
 
 const CHART_COLORS = {
@@ -20,6 +32,16 @@ const CHART_COLORS = {
   border: "hsl(230 15% 38% / 55%)",
   line: "hsl(165 78% 45%)",
 } as const;
+
+function toLineStyle(style?: EquityCurveLine["lineStyle"]) {
+  if (style === "dashed") {
+    return LineStyle.Dashed;
+  }
+  if (style === "dotted") {
+    return LineStyle.Dotted;
+  }
+  return LineStyle.Solid;
+}
 
 function normalizeChartPoints(points: EquityCurvePoint[]): EquityCurvePoint[] {
   if (points.length <= 1) {
@@ -43,11 +65,28 @@ function normalizeChartPoints(points: EquityCurvePoint[]): EquityCurvePoint[] {
   return deduped;
 }
 
-export function EquityCurveChart({ points, height = 240 }: EquityCurveChartProps) {
+export function EquityCurveChart({ points = [], series, height = 240 }: EquityCurveChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
-  const seriesRef = useRef<ReturnType<IChartApi["addSeries"]> | null>(null);
+  const seriesRef = useRef(new Map<string, ReturnType<IChartApi["addSeries"]>>());
   const heightRef = useRef(height);
+  const resolvedSeries = useMemo<EquityCurveLine[]>(
+    () =>
+      series && series.length > 0
+        ? series
+        : [
+            {
+              id: "equity",
+              label: "Equity",
+              points,
+              color: CHART_COLORS.line,
+              lineWidth: 2,
+              priceLineVisible: true,
+              lastValueVisible: true,
+            },
+          ],
+    [points, series],
+  );
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -55,6 +94,7 @@ export function EquityCurveChart({ points, height = 240 }: EquityCurveChartProps
     }
 
     const container = containerRef.current;
+    const seriesMap = seriesRef.current;
     const chart = createChart(container, {
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
@@ -85,27 +125,17 @@ export function EquityCurveChart({ points, height = 240 }: EquityCurveChartProps
       height: heightRef.current,
     });
 
-    const equitySeries = chart.addSeries(LineSeries, {
-      color: CHART_COLORS.line,
-      lineWidth: 2,
-      priceLineVisible: true,
-      lastValueVisible: true,
-    });
-    equitySeries.setData([]);
-    chart.timeScale().fitContent();
-
     const resizeObserver = new ResizeObserver(() => {
       chart.resize(container.clientWidth, heightRef.current);
     });
     resizeObserver.observe(container);
 
     chartRef.current = chart;
-    seriesRef.current = equitySeries;
     return () => {
       resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
-      seriesRef.current = null;
+      seriesMap.clear();
     };
   }, []);
 
@@ -118,17 +148,46 @@ export function EquityCurveChart({ points, height = 240 }: EquityCurveChartProps
   }, [height]);
 
   useEffect(() => {
-    if (!chartRef.current || !seriesRef.current) {
+    if (!chartRef.current) {
       return;
     }
-    seriesRef.current.setData(normalizeChartPoints(points));
+    const chart = chartRef.current;
+    const existingSeries = seriesRef.current;
+    const nextIds = new Set(resolvedSeries.map((line) => line.id));
+
+    for (const [seriesId, lineSeries] of existingSeries.entries()) {
+      if (!nextIds.has(seriesId)) {
+        chart.removeSeries(lineSeries);
+        existingSeries.delete(seriesId);
+      }
+    }
+
+    for (const line of resolvedSeries) {
+      const normalizedPoints = normalizeChartPoints(line.points);
+      const current = existingSeries.get(line.id);
+      if (current) {
+        current.setData(normalizedPoints);
+        continue;
+      }
+      const next = chart.addSeries(LineSeries, {
+        color: line.color ?? CHART_COLORS.line,
+        lineWidth: line.lineWidth ?? 2,
+        lineStyle: toLineStyle(line.lineStyle),
+        priceLineVisible: line.priceLineVisible ?? false,
+        lastValueVisible: line.lastValueVisible ?? false,
+      });
+      next.setData(normalizedPoints);
+      existingSeries.set(line.id, next);
+    }
     chartRef.current.timeScale().fitContent();
-  }, [points]);
+  }, [resolvedSeries]);
+
+  const hasAnyPoints = resolvedSeries.some((line) => line.points.length > 0);
 
   return (
     <div className="relative w-full" style={{ height }}>
       <div ref={containerRef} className="h-full w-full" />
-      {points.length === 0 ? (
+      {!hasAnyPoints ? (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center rounded-lg border border-dashed border-border/70 bg-muted/15 p-4 text-sm text-muted-foreground">
           No equity curve points for this run.
         </div>

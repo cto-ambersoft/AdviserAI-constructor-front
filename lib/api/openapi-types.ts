@@ -89,6 +89,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/internal/backtest/ai-forecast-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available AI forecast CSV files for internal callers */
+        get: operations["list_ai_forecast_files_internal_api_v1_internal_backtest_ai_forecast_files_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/backtest/compare": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run an internal AI-vs-baseline backtest comparison */
+        post: operations["compare_internal_api_v1_internal_backtest_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/strategies/meta": {
         parameters: {
             query?: never;
@@ -185,6 +219,23 @@ export interface paths {
         };
         /** List available VWAP market regimes */
         get: operations["list_vwap_regimes_api_v1_backtest_vwap_regimes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/backtest/ai-forecast-files": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List available AI forecast backtest CSV files */
+        get: operations["list_ai_forecast_backtest_files_api_v1_backtest_ai_forecast_files_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -757,6 +808,227 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/runtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get runtime data for all users (admin) */
+        get: operations["get_admin_runtime_snapshot_api_v1_admin_runtime_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-configs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Ai Configs */
+        get: operations["list_ai_configs_api_v1_ai_backtests_ai_configs_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/agent-weights": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agent Weights */
+        get: operations["list_agent_weights_api_v1_ai_backtests_agent_weights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-forecast-catalogue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Ai Forecast Catalogue */
+        get: operations["list_ai_forecast_catalogue_api_v1_ai_backtests_ai_forecast_catalogue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-forecast-catalogue/{forecast_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Forecast Catalogue Entry */
+        get: operations["get_ai_forecast_catalogue_entry_api_v1_ai_backtests_ai_forecast_catalogue__forecast_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-forecast-catalogue/rebuild": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Rebuild Ai Forecast Catalogue */
+        post: operations["rebuild_ai_forecast_catalogue_api_v1_ai_backtests_ai_forecast_catalogue_rebuild_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/backtest-experiments": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Backtest Experiments */
+        get: operations["list_backtest_experiments_api_v1_ai_backtests_backtest_experiments_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/backtest-experiments/{experiment_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Backtest Experiment */
+        get: operations["get_backtest_experiment_api_v1_ai_backtests_backtest_experiments__experiment_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/backtest-experiments/run": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Run Backtest Experiment */
+        post: operations["run_backtest_experiment_api_v1_ai_backtests_backtest_experiments_run_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-decision-events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Ai Decision Events */
+        get: operations["list_ai_decision_events_api_v1_ai_backtests_ai_decision_events_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/agent-accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agent Accuracy */
+        get: operations["list_agent_accuracy_api_v1_ai_backtests_agent_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/agent-weights/suggestions/{ai_config_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Suggest Agent Weights */
+        get: operations["suggest_agent_weights_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/agent-weights/suggestions/{ai_config_id}/apply": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Apply Agent Weight Suggestion */
+        post: operations["apply_agent_weight_suggestion_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis/trigger-now": {
         parameters: {
             query?: never;
@@ -1046,6 +1318,304 @@ export interface components {
             /** Last Trade Ts */
             last_trade_ts?: string | null;
         };
+        /** AdminAutoTradeConfigRead */
+        AdminAutoTradeConfigRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Enabled */
+            enabled: boolean;
+            /** Is Running */
+            is_running: boolean;
+            /** Position Size Usdt */
+            position_size_usdt: number;
+            /** Leverage */
+            leverage: number;
+            /** Min Confidence Pct */
+            min_confidence_pct: number;
+            /** Fast Close Confidence Pct */
+            fast_close_confidence_pct: number;
+            /** Confirm Reports Required */
+            confirm_reports_required: number;
+            /** Risk Mode */
+            risk_mode: string;
+            /** Sl Pct */
+            sl_pct: number;
+            /** Tp Pct */
+            tp_pct: number;
+            /** Last Started At */
+            last_started_at: string | null;
+            /** Last Stopped At */
+            last_stopped_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminAutoTradePositionRead */
+        AdminAutoTradePositionRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Config Id */
+            config_id: number;
+            /** Profile Id */
+            profile_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Side */
+            side: string;
+            /** Status */
+            status: string;
+            /** Entry Price */
+            entry_price: number;
+            /** Quantity */
+            quantity: number;
+            /** Position Size Usdt */
+            position_size_usdt: number;
+            /** Leverage */
+            leverage: number;
+            /** Tp Price */
+            tp_price: number;
+            /** Sl Price */
+            sl_price: number;
+            /** Entry Confidence Pct */
+            entry_confidence_pct: number;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Close Reason */
+            close_reason: string | null;
+            /** Close Price */
+            close_price: number | null;
+            /** Open Order Id */
+            open_order_id: string | null;
+            /** Close Order Id */
+            close_order_id: string | null;
+            /** Open History Id */
+            open_history_id: number | null;
+            /** Close History Id */
+            close_history_id: number | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminLivePaperProfileRead */
+        AdminLivePaperProfileRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Strategy Id */
+            strategy_id: number;
+            /** Strategy Revision */
+            strategy_revision: number;
+            /** Is Running */
+            is_running: boolean;
+            /** Total Balance Usdt */
+            total_balance_usdt: number;
+            /** Per Trade Usdt */
+            per_trade_usdt: number;
+            /** Last Processed At */
+            last_processed_at: string | null;
+            /** Last Poll At */
+            last_poll_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminRuntimePageRead */
+        AdminRuntimePageRead: {
+            /** Users Limit */
+            users_limit: number;
+            /** After User Id */
+            after_user_id?: number | null;
+            /** Next After User Id */
+            next_after_user_id?: number | null;
+            /**
+             * Has More
+             * @default false
+             */
+            has_more: boolean;
+        };
+        /** AdminRuntimeSnapshotResponse */
+        AdminRuntimeSnapshotResponse: {
+            /**
+             * Generated At
+             * Format: date-time
+             */
+            generated_at: string;
+            summary: components["schemas"]["AdminRuntimeSummaryRead"];
+            page: components["schemas"]["AdminRuntimePageRead"];
+            /** Users */
+            users?: components["schemas"]["AdminUserRuntimeRead"][];
+        };
+        /** AdminRuntimeSummaryRead */
+        AdminRuntimeSummaryRead: {
+            /** Total Users */
+            total_users: number;
+            /** Active Users */
+            active_users: number;
+            /** Admin Users */
+            admin_users: number;
+            /** Total Strategies */
+            total_strategies: number;
+            /** Active Strategies */
+            active_strategies: number;
+            /** Total Auto Trade Configs */
+            total_auto_trade_configs: number;
+            /** Running Auto Trade Configs */
+            running_auto_trade_configs: number;
+            /** Total Auto Trade Positions */
+            total_auto_trade_positions: number;
+            /** Open Auto Trade Positions */
+            open_auto_trade_positions: number;
+            /** Running Live Paper Profiles */
+            running_live_paper_profiles: number;
+        };
+        /** AdminStrategyRead */
+        AdminStrategyRead: {
+            /** Id */
+            id: number;
+            /** User Id */
+            user_id: number;
+            /** Name */
+            name: string;
+            /** Strategy Type */
+            strategy_type: string;
+            /** Version */
+            version: string;
+            /** Description */
+            description: string | null;
+            /** Is Active */
+            is_active: boolean;
+            /** Config */
+            config: {
+                [key: string]: unknown;
+            };
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminUserRead */
+        AdminUserRead: {
+            /** Id */
+            id: number;
+            /** Email */
+            email: string;
+            /** Is Active */
+            is_active: boolean;
+            /** Is Admin */
+            is_admin: boolean;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Updated At
+             * Format: date-time
+             */
+            updated_at: string;
+        };
+        /** AdminUserRuntimeRead */
+        AdminUserRuntimeRead: {
+            user: components["schemas"]["AdminUserRead"];
+            stats: components["schemas"]["AdminUserRuntimeStatsRead"];
+            /**
+             * Strategies Truncated
+             * @default false
+             */
+            strategies_truncated: boolean;
+            /**
+             * Auto Trade Configs Truncated
+             * @default false
+             */
+            auto_trade_configs_truncated: boolean;
+            /**
+             * Auto Trade Positions Truncated
+             * @default false
+             */
+            auto_trade_positions_truncated: boolean;
+            /** Strategies */
+            strategies?: components["schemas"]["AdminStrategyRead"][];
+            /** Auto Trade Configs */
+            auto_trade_configs?: components["schemas"]["AdminAutoTradeConfigRead"][];
+            /** Auto Trade Positions */
+            auto_trade_positions?: components["schemas"]["AdminAutoTradePositionRead"][];
+            live_paper_profile?: components["schemas"]["AdminLivePaperProfileRead"] | null;
+        };
+        /** AdminUserRuntimeStatsRead */
+        AdminUserRuntimeStatsRead: {
+            /** Total Strategies */
+            total_strategies: number;
+            /** Active Strategies */
+            active_strategies: number;
+            /** Auto Trade Configs */
+            auto_trade_configs: number;
+            /** Running Auto Trade Configs */
+            running_auto_trade_configs: number;
+            /** Auto Trade Positions */
+            auto_trade_positions: number;
+            /** Open Auto Trade Positions */
+            open_auto_trade_positions: number;
+            /**
+             * Live Paper Running
+             * @default false
+             */
+            live_paper_running: boolean;
+        };
+        /** AiForecastBacktestFile */
+        AiForecastBacktestFile: {
+            /** File Name */
+            file_name: string;
+            /** Modified At Utc */
+            modified_at_utc: string;
+        };
+        /** AiForecastBacktestFilesResponse */
+        AiForecastBacktestFilesResponse: {
+            /** Files */
+            files: components["schemas"]["AiForecastBacktestFile"][];
+        };
         /** AtrObSignalRequest */
         AtrObSignalRequest: {
             /**
@@ -1131,6 +1701,16 @@ export interface components {
              */
             bars: number;
             /**
+             * Start Time
+             * @description Optional inclusive OHLCV start time (ISO datetime).
+             */
+            start_time?: string | null;
+            /**
+             * End Time
+             * @description Optional inclusive OHLCV end time (ISO datetime).
+             */
+            end_time?: string | null;
+            /**
              * Candles
              * @description Optional OHLCV override from client. If omitted, backend fetches candles by symbol/timeframe/bars.
              */
@@ -1180,6 +1760,26 @@ export interface components {
              * @default 1000
              */
             allocation_usdt: number;
+            /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Forecast Rows */
+            ai_forecast_rows?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
+            /**
+             * Ai Entry Side Lock
+             * @default true
+             */
+            ai_entry_side_lock: boolean;
         };
         /** AuditLogCreate */
         AuditLogCreate: {
@@ -1286,6 +1886,7 @@ export interface components {
             sl_pct: number;
             /** Tp Pct */
             tp_pct: number;
+            strategy_profile?: components["schemas"]["StrategyProfileConfig"] | null;
             /** Last Started At */
             last_started_at: string | null;
             /** Last Stopped At */
@@ -1343,6 +1944,7 @@ export interface components {
             sl_pct: number;
             /** Tp Pct */
             tp_pct: number;
+            strategy_profile?: components["schemas"]["StrategyProfileConfig"] | null;
         };
         /** AutoTradeConfigsResponse */
         AutoTradeConfigsResponse: {
@@ -1899,6 +2501,16 @@ export interface components {
              */
             bars: number;
             /**
+             * Start Time
+             * @description Optional inclusive OHLCV start time (ISO datetime).
+             */
+            start_time?: string | null;
+            /**
+             * End Time
+             * @description Optional inclusive OHLCV end time (ISO datetime).
+             */
+            end_time?: string | null;
+            /**
              * Candles
              * @description Optional OHLCV override from client. If omitted, backend fetches candles by symbol/timeframe/bars.
              */
@@ -1947,11 +2559,70 @@ export interface components {
              * @default true
              */
             close_open_positions_on_eod: boolean;
+            /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Forecast Rows */
+            ai_forecast_rows?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** InternalBacktestCompareRequest */
+        InternalBacktestCompareRequest: {
+            /**
+             * Strategy
+             * @default vwap
+             */
+            strategy: string;
+            /**
+             * Exchange Name
+             * @default bybit
+             */
+            exchange_name: string;
+            /**
+             * Symbol
+             * @default BTC/USDT
+             */
+            symbol: string;
+            /**
+             * Timeframe
+             * @default 1h
+             */
+            timeframe: string;
+            /**
+             * Bars
+             * @default 500
+             */
+            bars: number;
+            /** Start Time */
+            start_time?: string | null;
+            /** End Time */
+            end_time?: string | null;
+            /** Algo Config */
+            algo_config?: {
+                [key: string]: unknown;
+            };
+            /** Data Config */
+            data_config?: {
+                [key: string]: unknown;
+            };
+            /** Ai Forecast Rows */
+            ai_forecast_rows: {
+                [key: string]: unknown;
+            }[];
         };
         /** IntradayMomentumCatalog */
         IntradayMomentumCatalog: {
@@ -1982,6 +2653,16 @@ export interface components {
              * @default 500
              */
             bars: number;
+            /**
+             * Start Time
+             * @description Optional inclusive OHLCV start time (ISO datetime).
+             */
+            start_time?: string | null;
+            /**
+             * End Time
+             * @description Optional inclusive OHLCV end time (ISO datetime).
+             */
+            end_time?: string | null;
             /**
              * Candles
              * @description Optional OHLCV override from client. If omitted, backend fetches candles by symbol/timeframe/bars.
@@ -2059,6 +2740,26 @@ export interface components {
             fee_pct: number;
             /** Entry Size Usdt */
             entry_size_usdt?: number | null;
+            /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Forecast Rows */
+            ai_forecast_rows?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
+            /**
+             * Ai Entry Side Lock
+             * @default true
+             */
+            ai_entry_side_lock: boolean;
         };
         /** KnifeCatcherCatalog */
         KnifeCatcherCatalog: {
@@ -2093,6 +2794,16 @@ export interface components {
              * @default 500
              */
             bars: number;
+            /**
+             * Start Time
+             * @description Optional inclusive OHLCV start time (ISO datetime).
+             */
+            start_time?: string | null;
+            /**
+             * End Time
+             * @description Optional inclusive OHLCV end time (ISO datetime).
+             */
+            end_time?: string | null;
             /**
              * Candles
              * @description Optional OHLCV override from client. If omitted, backend fetches candles by symbol/timeframe/bars.
@@ -2178,6 +2889,26 @@ export interface components {
              * @default 1000
              */
             account_balance: number;
+            /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Forecast Rows */
+            ai_forecast_rows?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
+            /**
+             * Ai Entry Side Lock
+             * @default true
+             */
+            ai_entry_side_lock: boolean;
         };
         /** LivePaperEventRead */
         LivePaperEventRead: {
@@ -2581,6 +3312,26 @@ export interface components {
             /** Strategies */
             strategies?: components["schemas"]["PortfolioStrategyInput"][];
             /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Forecast Rows */
+            ai_forecast_rows?: {
+                [key: string]: unknown;
+            }[] | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
+            /**
+             * Ai Entry Side Lock
+             * @default true
+             */
+            ai_entry_side_lock: boolean;
+            /**
              * Async Job
              * @default false
              */
@@ -2732,6 +3483,109 @@ export interface components {
             /** Version Max Length */
             version_max_length: number;
         };
+        /** StrategyProfileConfig */
+        StrategyProfileConfig: {
+            /**
+             * Sl Mode
+             * @default fixed
+             * @enum {string}
+             */
+            sl_mode: "fixed" | "atr" | "percentage";
+            /** Sl Value */
+            sl_value: number;
+            /**
+             * Tp Mode
+             * @default single
+             * @enum {string}
+             */
+            tp_mode: "single" | "multi";
+            /** Tp Value */
+            tp_value?: number | null;
+            /** Tp Levels */
+            tp_levels?: components["schemas"]["StrategyProfileTPLevel"][] | null;
+            /**
+             * Trailing Enabled
+             * @default false
+             */
+            trailing_enabled: boolean;
+            /**
+             * Trailing Callback Rate
+             * @default 1
+             */
+            trailing_callback_rate: number;
+            /**
+             * Breakeven Enabled
+             * @default false
+             */
+            breakeven_enabled: boolean;
+            /**
+             * Breakeven Trigger Rr
+             * @default 1
+             */
+            breakeven_trigger_rr: number;
+            /**
+             * Volatility Sl Enabled
+             * @default false
+             */
+            volatility_sl_enabled: boolean;
+            /**
+             * Volatility Atr Period
+             * @default 14
+             */
+            volatility_atr_period: number;
+            /**
+             * Volatility Atr Multiplier
+             * @default 2
+             */
+            volatility_atr_multiplier: number;
+            /** Watchers */
+            watchers?: components["schemas"]["StrategyProfileWatcher"][];
+            /** Adjustment Priority */
+            adjustment_priority?: string[];
+            /**
+             * Max Position Pct
+             * @default 100
+             */
+            max_position_pct: number;
+            /**
+             * Allow Sl Widen
+             * @default false
+             */
+            allow_sl_widen: boolean;
+        };
+        /** StrategyProfileTPLevel */
+        StrategyProfileTPLevel: {
+            /** Price Offset Pct */
+            price_offset_pct: number;
+            /** Close Pct */
+            close_pct: number;
+            /** Move Sl To */
+            move_sl_to?: string | null;
+            /** Sl Lock Pct */
+            sl_lock_pct?: number | null;
+        };
+        /** StrategyProfileWatcher */
+        StrategyProfileWatcher: {
+            /** Indicator */
+            indicator: string;
+            /** Params */
+            params?: {
+                [key: string]: unknown;
+            };
+            /** Condition */
+            condition: string;
+            /** Action */
+            action: string;
+            /** Action Params */
+            action_params?: {
+                [key: string]: unknown;
+            };
+            /**
+             * Is Active
+             * @default true
+             */
+            is_active: boolean;
+        };
         /** StrategyRead */
         StrategyRead: {
             /** Id */
@@ -2829,6 +3683,41 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
+        /** VwapAiComparisonDelta */
+        VwapAiComparisonDelta: {
+            /** Total Pnl Delta */
+            total_pnl_delta: number;
+            /** Win Rate Delta */
+            win_rate_delta: number;
+            /** Trades Delta */
+            trades_delta: number;
+            /**
+             * Profit Factor Delta
+             * @default 0
+             */
+            profit_factor_delta: number;
+            /**
+             * Sharpe Proxy Delta
+             * @default 0
+             */
+            sharpe_proxy_delta: number;
+            /**
+             * Max Drawdown Delta
+             * @default 0
+             */
+            max_drawdown_delta: number;
+            /**
+             * Calmar Ratio Delta
+             * @default 0
+             */
+            calmar_ratio_delta: number;
+        };
+        /** VwapAiComparisonResponse */
+        VwapAiComparisonResponse: {
+            result: components["schemas"]["BacktestResponse"];
+            baseline: components["schemas"]["BacktestResponse"];
+            comparison: components["schemas"]["VwapAiComparisonDelta"];
+        };
         /** VwapBacktestRequest */
         VwapBacktestRequest: {
             /**
@@ -2851,6 +3740,16 @@ export interface components {
              * @default 500
              */
             bars: number;
+            /**
+             * Start Time
+             * @description Optional inclusive OHLCV start time (ISO datetime).
+             */
+            start_time?: string | null;
+            /**
+             * End Time
+             * @description Optional inclusive OHLCV end time (ISO datetime).
+             */
+            end_time?: string | null;
             /**
              * Candles
              * @description Optional OHLCV override from client. If omitted, backend fetches candles by symbol/timeframe/bars.
@@ -2949,6 +3848,17 @@ export interface components {
              * @default 120
              */
             ob_lookback: number;
+            /**
+             * Run With Ai
+             * @default false
+             */
+            run_with_ai: boolean;
+            /** Ai Forecast File */
+            ai_forecast_file?: string | null;
+            /** Ai Bull Confidence Threshold */
+            ai_bull_confidence_threshold?: number | null;
+            /** Ai Bear Confidence Threshold */
+            ai_bear_confidence_threshold?: number | null;
         };
         /** VwapCatalog */
         VwapCatalog: {
@@ -3109,6 +4019,72 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["UserRead"];
+                };
+            };
+        };
+    };
+    list_ai_forecast_files_internal_api_v1_internal_backtest_ai_forecast_files_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Internal-API-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiForecastBacktestFilesResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    compare_internal_api_v1_internal_backtest_compare_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Internal-API-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["InternalBacktestCompareRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VwapAiComparisonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -3316,6 +4292,26 @@ export interface operations {
             };
         };
     };
+    list_ai_forecast_backtest_files_api_v1_backtest_ai_forecast_files_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiForecastBacktestFilesResponse"];
+                };
+            };
+        };
+    };
     get_backtest_catalog_api_v1_backtest_catalog_get: {
         parameters: {
             query?: never;
@@ -3355,7 +4351,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BacktestResponse"];
+                    "application/json": components["schemas"]["BacktestResponse"] | components["schemas"]["VwapAiComparisonResponse"];
                 };
             };
             /** @description Validation Error */
@@ -4378,6 +5374,364 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AutoTradeEventsResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_admin_runtime_snapshot_api_v1_admin_runtime_get: {
+        parameters: {
+            query?: {
+                include_inactive_users?: boolean;
+                positions_status?: "all" | "open";
+                after_user_id?: number | null;
+                users_limit?: number;
+                include_details?: boolean;
+                strategies_limit_per_user?: number;
+                configs_limit_per_user?: number;
+                positions_limit_per_user?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminRuntimeSnapshotResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_ai_configs_api_v1_ai_backtests_ai_configs_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_agent_weights_api_v1_ai_backtests_agent_weights_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_ai_forecast_catalogue_api_v1_ai_backtests_ai_forecast_catalogue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_ai_forecast_catalogue_entry_api_v1_ai_backtests_ai_forecast_catalogue__forecast_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                forecast_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rebuild_ai_forecast_catalogue_api_v1_ai_backtests_ai_forecast_catalogue_rebuild_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_backtest_experiments_api_v1_ai_backtests_backtest_experiments_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_backtest_experiment_api_v1_ai_backtests_backtest_experiments__experiment_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                experiment_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    run_backtest_experiment_api_v1_ai_backtests_backtest_experiments_run_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_ai_decision_events_api_v1_ai_backtests_ai_decision_events_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    list_agent_accuracy_api_v1_ai_backtests_agent_accuracy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    suggest_agent_weights_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ai_config_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_agent_weight_suggestion_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__apply_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                ai_config_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": {
+                    [key: string]: unknown;
+                };
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

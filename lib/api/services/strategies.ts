@@ -10,8 +10,15 @@ export async function getStrategiesMeta() {
   return apiRequest<StrategyMetaResponse>("/api/v1/strategies/meta");
 }
 
-export async function listStrategies() {
-  return apiRequest<StrategyRead[]>("/api/v1/strategies/");
+type ListStrategiesQuery = {
+  strategy_type?: string;
+};
+
+export async function listStrategies(query: ListStrategiesQuery = {}) {
+  return apiRequest<StrategyRead[]>("/api/v1/strategies/", {
+    method: "GET",
+    query,
+  });
 }
 
 export async function createStrategy(payload: StrategyCreate) {

@@ -80,6 +80,31 @@ export function mapMarketRowsToCandles(response: MarketOhlcvResponse): CandlePoi
   return candles.sort((a, b) => Number(a.time) - Number(b.time));
 }
 
+export function mapBacktestOhlcvToCandles(rows: unknown): CandlePoint[] {
+  if (!Array.isArray(rows)) {
+    return [];
+  }
+  const candles: CandlePoint[] = [];
+  for (const item of rows) {
+    const row = toRecord(item);
+    if (!row) {
+      continue;
+    }
+    const time = toUnixTimestamp(
+      pickRecordValue(row, ["time", "timestamp", "date", "datetime"]),
+    );
+    const open = toNumber(pickRecordValue(row, ["open", "o"]));
+    const high = toNumber(pickRecordValue(row, ["high", "h"]));
+    const low = toNumber(pickRecordValue(row, ["low", "l"]));
+    const close = toNumber(pickRecordValue(row, ["close", "c"]));
+    if (time === null || open === null || high === null || low === null || close === null) {
+      continue;
+    }
+    candles.push({ time, open, high, low, close });
+  }
+  return candles.sort((a, b) => Number(a.time) - Number(b.time));
+}
+
 export function mapBacktestToOverlays(result: BacktestResponse | null): OverlayLine[] {
   if (!result?.chart_points || typeof result.chart_points !== "object") {
     return [];

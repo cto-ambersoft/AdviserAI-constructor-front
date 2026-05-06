@@ -3,14 +3,21 @@
 import { INPUT_CLASS, Label } from "@/components/trading/form-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AutoTradeStrategyProfileSection } from "@/components/auto-trade/auto-trade-strategy-profile-section";
 import type { AutoTradeFormState } from "@/components/auto-trade/types";
 import { isSupportedAutoTradeExchange } from "@/components/auto-trade/utils";
-import type { ExchangeAccountRead, PersonalAnalysisProfileRead } from "@/lib/api";
+import type {
+  ExchangeAccountRead,
+  PersonalAnalysisProfileRead,
+  StrategyRead,
+} from "@/lib/api";
 
 type Props = {
   form: AutoTradeFormState;
   profiles: PersonalAnalysisProfileRead[];
   accounts: ExchangeAccountRead[];
+  strategies: StrategyRead[];
+  isStrategiesLoading?: boolean;
   isBusy?: boolean;
   validationMessage: string;
   onChange: (updater: (prev: AutoTradeFormState) => AutoTradeFormState) => void;
@@ -21,6 +28,8 @@ export function AutoTradeConfigForm({
   form,
   profiles,
   accounts,
+  strategies,
+  isStrategiesLoading = false,
   isBusy = false,
   validationMessage,
   onChange,
@@ -44,6 +53,39 @@ export function AutoTradeConfigForm({
           />
           Enabled
         </label>
+
+        <div className="space-y-1">
+          <Label text="Signal source" />
+          <div className="grid grid-cols-2 gap-2">
+            <Button
+              type="button"
+              variant={form.signal_source === "analysis" ? "default" : "outline"}
+              onClick={() =>
+                onChange((prev) => ({
+                  ...prev,
+                  signal_source: "analysis",
+                  strategy_id: null,
+                }))
+              }
+            >
+              Analysis
+            </Button>
+            <Button
+              type="button"
+              variant={
+                form.signal_source === "strategy_atr_block" ? "default" : "outline"
+              }
+              onClick={() =>
+                onChange((prev) => ({
+                  ...prev,
+                  signal_source: "strategy_atr_block",
+                }))
+              }
+            >
+              ATR Strategy
+            </Button>
+          </div>
+        </div>
 
         <div className="space-y-1">
           <Label text="Profile" />
@@ -139,6 +181,7 @@ export function AutoTradeConfigForm({
           min={1}
           max={5}
           step={1}
+          integer
           onChange={(value) =>
             onChange((prev) => ({ ...prev, confirm_reports_required: value }))
           }
@@ -171,7 +214,133 @@ export function AutoTradeConfigForm({
           step={0.01}
           onChange={(value) => onChange((prev) => ({ ...prev, tp_pct: value }))}
         />
+
+        {form.signal_source === "strategy_atr_block" ? (
+          <>
+            <div className="space-y-1">
+              <Label text="ATR strategy" />
+              <select
+                className={INPUT_CLASS}
+                value={form.strategy_id ?? ""}
+                onChange={(event) =>
+                  onChange((prev) => ({
+                    ...prev,
+                    strategy_id: event.target.value ? Number(event.target.value) : null,
+                  }))
+                }
+                disabled={isStrategiesLoading}
+              >
+                <option value="">
+                  {isStrategiesLoading ? "Loading strategies..." : "Select strategy"}
+                </option>
+                {strategies.map((strategy) => (
+                  <option key={strategy.id} value={strategy.id}>
+                    #{strategy.id} {strategy.name} {strategy.is_active ? "" : "(inactive)"}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <NumberInput
+              label="Timeframe bars"
+              value={form.bars}
+              min={100}
+              max={20000}
+              step={1}
+              integer
+              onChange={(value) => onChange((prev) => ({ ...prev, bars: value }))}
+            />
+
+            <NumberInput
+              label="Poll interval seconds"
+              value={form.poll_interval_seconds}
+              min={15}
+              max={3600}
+              step={1}
+              integer
+              onChange={(value) =>
+                onChange((prev) => ({ ...prev, poll_interval_seconds: value }))
+              }
+            />
+
+            <div className="space-y-1">
+              <Label text="Timeframe" />
+              <input
+                className={INPUT_CLASS}
+                value={form.timeframe}
+                onChange={(event) =>
+                  onChange((prev) => ({ ...prev, timeframe: event.target.value }))
+                }
+                placeholder="1h"
+              />
+            </div>
+
+            <OptionalNumberInput
+              label="Override ema_period"
+              value={form.strategy_overrides.ema_period}
+              min={1}
+              step={1}
+              integer
+              onChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  strategy_overrides: { ...prev.strategy_overrides, ema_period: value },
+                }))
+              }
+            />
+
+            <OptionalNumberInput
+              label="Override atr_period"
+              value={form.strategy_overrides.atr_period}
+              min={1}
+              step={1}
+              integer
+              onChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  strategy_overrides: { ...prev.strategy_overrides, atr_period: value },
+                }))
+              }
+            />
+
+            <OptionalNumberInput
+              label="Override impulse_atr"
+              value={form.strategy_overrides.impulse_atr}
+              min={0.000001}
+              step={0.01}
+              onChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  strategy_overrides: { ...prev.strategy_overrides, impulse_atr: value },
+                }))
+              }
+            />
+
+            <OptionalNumberInput
+              label="Override ob_buffer_atr"
+              value={form.strategy_overrides.ob_buffer_atr}
+              min={0.000001}
+              step={0.01}
+              onChange={(value) =>
+                onChange((prev) => ({
+                  ...prev,
+                  strategy_overrides: { ...prev.strategy_overrides, ob_buffer_atr: value },
+                }))
+              }
+            />
+          </>
+        ) : null}
       </div>
+
+      <AutoTradeStrategyProfileSection
+        profile={form.strategy_profile}
+        onChange={(updater) =>
+          onChange((prev) => ({
+            ...prev,
+            strategy_profile: updater(prev.strategy_profile),
+          }))
+        }
+      />
 
       {isOkxSelected ? (
         <p className="rounded-md border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-sm text-amber-200">
@@ -206,6 +375,7 @@ function NumberInput({
   min,
   max,
   step,
+  integer = false,
 }: {
   label: string;
   value: number;
@@ -213,6 +383,7 @@ function NumberInput({
   min?: number;
   max?: number;
   step?: number;
+  integer?: boolean;
 }) {
   return (
     <div className="space-y-1">
@@ -227,7 +398,50 @@ function NumberInput({
         onChange={(event) => {
           const parsed = Number(event.target.value);
           if (Number.isFinite(parsed)) {
-            onChange(parsed);
+            onChange(integer ? Math.round(parsed) : parsed);
+          }
+        }}
+      />
+    </div>
+  );
+}
+
+function OptionalNumberInput({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+  integer = false,
+}: {
+  label: string;
+  value: number | null;
+  onChange: (value: number | null) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  integer?: boolean;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label text={label} />
+      <input
+        className={INPUT_CLASS}
+        type="number"
+        value={value === null ? "" : String(value)}
+        min={min}
+        max={max}
+        step={step}
+        onChange={(event) => {
+          const nextValue = event.target.value.trim();
+          if (!nextValue) {
+            onChange(null);
+            return;
+          }
+          const parsed = Number(nextValue);
+          if (Number.isFinite(parsed)) {
+            onChange(integer ? Math.round(parsed) : parsed);
           }
         }}
       />

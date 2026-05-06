@@ -59,6 +59,8 @@ import {
   createStrategy,
   createPersonalAnalysisProfile,
   deletePersonalAnalysisProfile,
+  listAiForecastCatalogue,
+  getAiForecastBacktestFiles,
   getPersonalAnalysisDefaults,
   getPersonalAnalysisJob,
   getPersonalAnalysisLatest,
@@ -95,6 +97,8 @@ import {
   runVwapBacktest,
   type AnalysisRun,
   type AnalysisTrendExtraction,
+  type AiForecastBacktestFile,
+  type AiForecastCatalogueEntry,
   type AtrOrderBlockRequest,
   type AtrObSignalRequest,
   type AuditLogRead,
@@ -121,12 +125,16 @@ import {
   type StrategyCreate,
   type StrategyMetaResponse,
   type StrategyRead,
+  type VwapAiComparisonDelta,
+  type VwapAiComparisonResponse,
   type VwapBacktestRequest,
+  type VwapBacktestResponse,
 } from "@/lib/api";
 import type { CandlePoint, OverlayLine } from "@/lib/trading/chart-types";
 import {
   mapBacktestToMarkers,
   mapBacktestToOverlays,
+  mapBacktestOhlcvToCandles,
   normalizeBacktestMetrics,
   mapMarketRowsToCandles,
   toKpiRows,
@@ -221,8 +229,51 @@ type PendingActionKey =
   | "refresh_analysis"
   | "trigger_analysis";
 
+type NormalizedVwapBacktestResponse = {
+  mode: "classic" | "ai";
+  primary: BacktestResponse;
+  baseline: BacktestResponse | null;
+  comparison: VwapAiComparisonDelta | null;
+};
+
+type VwapBuilderFormState = VwapBacktestRequest & {
+  run_with_ai?: boolean;
+  ai_forecast_file?: string | null;
+  ai_bull_confidence_threshold?: number | null;
+  ai_bear_confidence_threshold?: number | null;
+};
+
 function normalizeStrategyLabel(label: string) {
   return label.trim().toLowerCase();
+}
+
+function isVwapAiComparisonResponse(
+  payload: VwapBacktestResponse,
+): payload is VwapAiComparisonResponse {
+  if (!payload || typeof payload !== "object") {
+    return false;
+  }
+  const record = payload as Record<string, unknown>;
+  return "result" in record && "baseline" in record && "comparison" in record;
+}
+
+function normalizeVwapBacktestResponse(
+  payload: VwapBacktestResponse,
+): NormalizedVwapBacktestResponse {
+  if (isVwapAiComparisonResponse(payload)) {
+    return {
+      mode: "ai",
+      primary: payload.result,
+      baseline: payload.baseline,
+      comparison: payload.comparison,
+    };
+  }
+  return {
+    mode: "classic",
+    primary: payload,
+    baseline: null,
+    comparison: null,
+  };
 }
 
 function roundMetric(value: number, digits = 4) {
@@ -568,6 +619,11 @@ export function TradingDashboard() {
   const [latestBacktest, setLatestBacktest] = useState<BacktestResponse | null>(
     null,
   );
+  const [latestVwapComparison, setLatestVwapComparison] =
+    useState<NormalizedVwapBacktestResponse | null>(null);
+  const [latestBacktestIncludeSeries, setLatestBacktestIncludeSeries] = useState<
+    boolean | null
+  >(null);
   const [latestPortfolio, setLatestPortfolio] =
     useState<BacktestResponse | null>(null);
   const [vwapPresetOptions, setVwapPresetOptions] = useState<string[]>([]);
@@ -575,6 +631,15 @@ export function TradingDashboard() {
   const [vwapIndicatorOptions, setVwapIndicatorOptions] = useState<string[]>(
     [],
   );
+  const [aiForecastFiles, setAiForecastFiles] = useState<AiForecastBacktestFile[]>(
+    [],
+  );
+  const [isAiForecastFilesLoading, setIsAiForecastFilesLoading] = useState(false);
+  const [aiForecastCatalogueEntries, setAiForecastCatalogueEntries] = useState<
+    AiForecastCatalogueEntry[]
+  >([]);
+  const [isAiForecastCatalogueLoading, setIsAiForecastCatalogueLoading] =
+    useState(false);
   const setErrorMessage = useCallback((message: string) => {
     const normalized = message.trim();
     if (!normalized) {
@@ -750,7 +815,7 @@ export function TradingDashboard() {
   const [personalJobStatus, setPersonalJobStatus] =
     useState<PersonalAnalysisJobRead | null>(null);
 
-  const [builderForm, setBuilderForm] = useState<VwapBacktestRequest>({
+  const [builderForm, setBuilderForm] = useState<VwapBuilderFormState>(() => ({
     exchange_name: marketExchangeName,
     symbol: "BTC/USDT",
     timeframe: "1h",
@@ -773,7 +838,11 @@ export function TradingDashboard() {
     ob_impulse_atr: 1.5,
     ob_buffer_atr: 0.15,
     ob_lookback: 120,
-  });
+    run_with_ai: false,
+    ai_forecast_file: null,
+    ai_bull_confidence_threshold: null,
+    ai_bear_confidence_threshold: null,
+  }));
   const [builderName, setBuilderName] = useState("");
   const [builderAuditReason, setBuilderAuditReason] = useState("manual run");
   const [atrForm, setAtrForm] = useState<AtrStrategyFormState>({
@@ -864,6 +933,7 @@ export function TradingDashboard() {
     const init = async () => {
       setLoading(true);
       setIsCatalogLoading(true);
+      setIsAiForecastFilesLoading(true);
       setErrorMessage("");
       try {
         const [
@@ -877,6 +947,7 @@ export function TradingDashboard() {
           exchangeAccountsData,
           auditMetaData,
           auditEventsData,
+          aiForecastFilesData,
         ] = await Promise.all([
           getMarketMeta(),
           getStrategiesMeta(),
@@ -888,6 +959,7 @@ export function TradingDashboard() {
           listExchangeAccounts(),
           getAuditMeta(),
           listAuditEvents(auditLimit),
+          getAiForecastBacktestFiles().catch(() => ({ files: [] })),
         ]);
         setMarketMeta({
           defaultExchangeName: marketMetaData.default_exchange_name,
@@ -916,6 +988,7 @@ export function TradingDashboard() {
         setExchangeAccounts(exchangeAccountsData);
         setAuditMeta(auditMetaData);
         setAuditEvents(auditEventsData);
+        setAiForecastFiles(aiForecastFilesData.files ?? []);
         try {
           const [analysisRunsData, personalDefaultsData, personalProfilesData] =
             await Promise.all([
@@ -944,12 +1017,43 @@ export function TradingDashboard() {
         );
       } finally {
         setIsCatalogLoading(false);
+        setIsAiForecastFilesLoading(false);
         setLoading(false);
       }
     };
 
     void init();
   }, [auditLimit, setErrorMessage, setInfoMessage, setLoading]);
+
+  useEffect(() => {
+    let isMounted = true;
+    const loadCatalogue = async () => {
+      setIsAiForecastCatalogueLoading(true);
+      try {
+        const response = await listAiForecastCatalogue({
+          symbol,
+          timeframe,
+          limit: 20,
+        });
+        if (isMounted) {
+          setAiForecastCatalogueEntries(response.entries ?? []);
+        }
+      } catch {
+        if (isMounted) {
+          setAiForecastCatalogueEntries([]);
+        }
+      } finally {
+        if (isMounted) {
+          setIsAiForecastCatalogueLoading(false);
+        }
+      }
+    };
+
+    void loadCatalogue();
+    return () => {
+      isMounted = false;
+    };
+  }, [symbol, timeframe]);
 
   useEffect(() => {
     const loadMarket = async () => {
@@ -1068,7 +1172,12 @@ export function TradingDashboard() {
     () => normalizeBacktestMetrics(latestBacktest),
     [latestBacktest],
   );
-  const equityCurveSeries = useMemo(
+  const baselineBacktest = latestVwapComparison?.baseline ?? null;
+  const baselineBacktestMetrics = useMemo(
+    () => normalizeBacktestMetrics(baselineBacktest),
+    [baselineBacktest],
+  );
+  const primaryEquityCurveSeries = useMemo(
     () =>
       backtestMetrics?.equityCurve.map((point) => ({
         time: point.time,
@@ -1076,6 +1185,27 @@ export function TradingDashboard() {
       })) ?? [],
     [backtestMetrics],
   );
+  const baselineEquityCurveSeries = useMemo(
+    () =>
+      baselineBacktestMetrics?.equityCurve.map((point) => ({
+        time: point.time,
+        value: point.value,
+      })) ?? [],
+    [baselineBacktestMetrics],
+  );
+  const chartBacktestCandles = useMemo(() => {
+    if (!latestBacktest) {
+      return [];
+    }
+    return mapBacktestOhlcvToCandles(
+      (latestBacktest.chart_points as JsonRecord | undefined)?.ohlcv,
+    );
+  }, [latestBacktest]);
+  const shouldUseBacktestCandles =
+    activeTab !== "live" &&
+    latestBacktestIncludeSeries === true &&
+    chartBacktestCandles.length > 0;
+  const marketChartCandles = shouldUseBacktestCandles ? chartBacktestCandles : candles;
   const selectedAnalysisRun = useMemo(() => {
     if (!selectedAnalysisId) {
       return analysisRuns[0] ?? null;
@@ -1266,16 +1396,42 @@ export function TradingDashboard() {
       return;
     }
     setBuilderName(selected.name);
-    const config = (selected.config ?? {}) as Partial<VwapBacktestRequest>;
+    const config = (selected.config ?? {}) as Partial<VwapBuilderFormState>;
     setBuilderForm((current) => ({
       ...current,
       ...config,
       symbol: current.symbol,
       timeframe: current.timeframe,
       bars: current.bars,
-      include_series: true,
+      include_series:
+        typeof config.include_series === "boolean" ? config.include_series : true,
+      run_with_ai: config.run_with_ai ?? false,
+      ai_forecast_file: config.ai_forecast_file ?? null,
+      ai_bull_confidence_threshold: config.ai_bull_confidence_threshold ?? null,
+      ai_bear_confidence_threshold: config.ai_bear_confidence_threshold ?? null,
     }));
   }, [selectedStrategyId, strategyById]);
+
+  useEffect(() => {
+    if (!builderForm.run_with_ai) {
+      return;
+    }
+    if (builderForm.ai_forecast_file) {
+      return;
+    }
+    if (aiForecastFiles.length === 0) {
+      return;
+    }
+    setBuilderForm((current) => ({
+      ...current,
+      ai_forecast_file: aiForecastFiles[0].file_name,
+    }));
+  }, [
+    aiForecastFiles,
+    builderForm.ai_forecast_file,
+    builderForm.run_with_ai,
+    setBuilderForm,
+  ]);
 
   useEffect(() => {
     if (livePaperSource !== "builtin") {
@@ -1368,19 +1524,32 @@ export function TradingDashboard() {
   };
 
   const runBacktestSafely = async (
-    runner: () => Promise<BacktestResponse>,
+    runner: () => Promise<BacktestResponse | VwapBacktestResponse>,
     label: string,
     pendingKey: PendingActionKey,
+    options: {
+      includeSeries?: boolean;
+      normalizeAsVwap?: boolean;
+    } = {},
   ) => {
     setLoading(true);
     setPendingAction(pendingKey);
     setErrorMessage("");
     setInfoMessage("");
     try {
-      const result = await runner();
-      setLatestBacktest(result);
-      setOverlays(mapBacktestToOverlays(result));
-      setChartMarkers(mapBacktestToMarkers(result));
+      const rawResult = await runner();
+      const normalizedResult =
+        options.normalizeAsVwap === true
+          ? normalizeVwapBacktestResponse(rawResult as VwapBacktestResponse)
+          : null;
+      const primary = normalizedResult?.primary ?? (rawResult as BacktestResponse);
+      setLatestBacktest(primary);
+      setLatestVwapComparison(normalizedResult);
+      setLatestBacktestIncludeSeries(
+        typeof options.includeSeries === "boolean" ? options.includeSeries : null,
+      );
+      setOverlays(mapBacktestToOverlays(primary));
+      setChartMarkers(mapBacktestToMarkers(primary));
       setInfoMessage(`${label} backtest complete`);
       await createAuditEvent({
         event: "BACKTEST_RUN",
@@ -1392,7 +1561,8 @@ export function TradingDashboard() {
           symbol,
           timeframe,
           bars,
-          trades: result.trades.length,
+          trades: primary.trades.length,
+          mode: normalizedResult?.mode ?? "classic",
         },
       });
       setAuditEvents(await listAuditEvents(auditLimit));
@@ -1463,15 +1633,17 @@ export function TradingDashboard() {
       setErrorMessage("Selected strategy not found");
       return;
     }
+    const config = (saved.config ?? {}) as Partial<VwapBuilderFormState>;
+    const includeSeries =
+      typeof config.include_series === "boolean" ? config.include_series : true;
     await runBacktestSafely(
       async () => {
-        const config = (saved.config ?? {}) as Partial<VwapBacktestRequest>;
         return runVwapBacktest({
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
           bars,
-          include_series: true,
+          include_series: includeSeries,
           trades_limit: 1000,
           regime: (config.regime as VwapBacktestRequest["regime"]) ?? "Flat",
           preset: (config.preset as VwapBacktestRequest["preset"]) ?? "Custom",
@@ -1490,10 +1662,18 @@ export function TradingDashboard() {
           ob_impulse_atr: Number(config.ob_impulse_atr ?? 1.5),
           ob_buffer_atr: Number(config.ob_buffer_atr ?? 0.15),
           ob_lookback: Number(config.ob_lookback ?? 120),
+          run_with_ai: config.run_with_ai ?? false,
+          ai_forecast_file: config.ai_forecast_file ?? null,
+          ai_bull_confidence_threshold: config.ai_bull_confidence_threshold ?? null,
+          ai_bear_confidence_threshold: config.ai_bear_confidence_threshold ?? null,
         });
       },
       saved.name,
       "run_saved",
+      {
+        includeSeries,
+        normalizeAsVwap: true,
+      },
     );
   };
 
@@ -1643,10 +1823,14 @@ export function TradingDashboard() {
           symbol,
           timeframe,
           bars,
-          include_series: true,
+          include_series: builderForm.include_series,
         }),
       "VWAP",
       "run_builder",
+      {
+        includeSeries: builderForm.include_series,
+        normalizeAsVwap: true,
+      },
     );
   };
 
@@ -1660,6 +1844,8 @@ export function TradingDashboard() {
           bars,
           include_series: true,
           trades_limit: 1000,
+          run_with_ai: false,
+          ai_entry_side_lock: false,
           ...atrForm,
           tp_levels: [
             [0.6, 0.3],
@@ -1669,6 +1855,7 @@ export function TradingDashboard() {
         }),
       "ATR Order Block",
       "run_atr",
+      { includeSeries: true },
     );
   };
 
@@ -1680,10 +1867,13 @@ export function TradingDashboard() {
           symbol,
           timeframe,
           bars,
+          run_with_ai: false,
+          ai_entry_side_lock: false,
           ...knifeForm,
         }),
       "Knife Catcher",
       "run_knife",
+      { includeSeries: knifeForm.include_series },
     );
   };
 
@@ -1697,10 +1887,12 @@ export function TradingDashboard() {
           bars,
           include_series: true,
           trades_limit: 1000,
+          run_with_ai: false,
           ...gridForm,
         }),
       "Grid Bot",
       "run_grid",
+      { includeSeries: true },
     );
   };
 
@@ -1714,10 +1906,13 @@ export function TradingDashboard() {
           bars,
           include_series: true,
           trades_limit: 1000,
+          run_with_ai: false,
+          ai_entry_side_lock: false,
           ...intradayForm,
         }),
       "Intraday Momentum",
       "run_intraday",
+      { includeSeries: true },
     );
   };
 
@@ -1921,9 +2116,11 @@ export function TradingDashboard() {
       let result: BacktestResponse;
       switch (strategy.strategy_type) {
         case "builder_vwap":
-          result = await runVwapBacktest(
-            configWithDefaults as unknown as VwapBacktestRequest,
-          );
+          result = normalizeVwapBacktestResponse(
+            await runVwapBacktest(
+              configWithDefaults as unknown as VwapBacktestRequest,
+            ),
+          ).primary;
           break;
         case "atr_order_block":
           result = await runAtrOrderBlockBacktest(
@@ -1952,6 +2149,12 @@ export function TradingDashboard() {
       }
 
       setLatestBacktest(result);
+      setLatestVwapComparison(null);
+      setLatestBacktestIncludeSeries(
+        typeof configWithDefaults.include_series === "boolean"
+          ? configWithDefaults.include_series
+          : null,
+      );
       setOverlays(mapBacktestToOverlays(result));
       livePaperBacktestMarkersRef.current = mapBacktestToMarkers(result);
       applyLivePaperChartMarkers(livePaperTradesRef.current);
@@ -3019,11 +3222,11 @@ export function TradingDashboard() {
               <CardContent className="space-y-4">
                 <div className="relative rounded-xl border border-border/70 bg-linear-to-b from-background to-muted/25 p-2 md:p-4">
                   <MarketChart
-                    candles={candles}
+                    candles={marketChartCandles}
                     overlays={overlays}
                     markers={activeTab === "live" ? livePaperChartMarkers : chartMarkers}
                   />
-                  {isChartLoading && candles.length === 0 ? (
+                  {isChartLoading && marketChartCandles.length === 0 ? (
                     <div className="absolute inset-0 z-10 flex items-center justify-center rounded-xl bg-background/55 backdrop-blur-[1px]">
                       <p className="inline-flex items-center text-sm text-muted-foreground">
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -3032,6 +3235,14 @@ export function TradingDashboard() {
                     </div>
                   ) : null}
                 </div>
+                {activeTab !== "live" &&
+                latestBacktestIncludeSeries === false &&
+                marketChartCandles.length === 0 ? (
+                  <p className="rounded-md border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 md:text-sm">
+                    `include_series=false`: chart series were intentionally skipped by
+                    backend. Summary and trades remain available.
+                  </p>
+                ) : null}
                 <p className="text-xs text-muted-foreground md:text-sm">
                   Tip: switch sections on the left to run scenarios quickly and
                   compare results on the same chart.
@@ -3054,6 +3265,10 @@ export function TradingDashboard() {
                   regimeOptions={vwapRegimeOptions}
                   indicatorOptions={vwapIndicatorOptions}
                   builderForm={builderForm}
+                  aiForecastFiles={aiForecastFiles}
+                  isAiForecastFilesLoading={isAiForecastFilesLoading}
+                  aiForecastCatalogueEntries={aiForecastCatalogueEntries}
+                  isAiForecastCatalogueLoading={isAiForecastCatalogueLoading}
                   onBuilderFormChange={setBuilderForm}
                   onRun={runBuilder}
                   builderName={builderName}
@@ -3063,8 +3278,12 @@ export function TradingDashboard() {
                   onAuditReasonChange={setBuilderAuditReason}
                   kpiRows={kpiRows}
                   metrics={backtestMetrics}
-                  equityCurveSeries={equityCurveSeries}
+                  equityCurveSeries={primaryEquityCurveSeries}
+                  baselineMetrics={baselineBacktestMetrics}
+                  baselineEquityCurveSeries={baselineEquityCurveSeries}
+                  vwapComparison={latestVwapComparison}
                   latestBacktest={latestBacktest}
+                  includeSeries={latestBacktestIncludeSeries}
                   trendExtraction={latestTrendExtraction}
                   analysisStructured={
                     latestAnalysisRun?.analysisStructured ?? null
@@ -3096,7 +3315,11 @@ export function TradingDashboard() {
                   onRunIntraday={runIntraday}
                   latestBacktest={latestBacktest}
                   metrics={backtestMetrics}
-                  equityCurveSeries={equityCurveSeries}
+                  equityCurveSeries={primaryEquityCurveSeries}
+                  baselineMetrics={baselineBacktestMetrics}
+                  baselineEquityCurveSeries={baselineEquityCurveSeries}
+                  vwapComparison={latestVwapComparison}
+                  includeSeries={latestBacktestIncludeSeries}
                   isRunSavedPending={isActionPending("run_saved")}
                   isDeletePending={isActionPending("delete_strategy")}
                   isRunAtrPending={isActionPending("run_atr")}
@@ -3271,8 +3494,8 @@ function SidebarTabQuickControls({
   trendExtraction,
 }: {
   activeTab: DashboardTab;
-  builderForm: VwapBacktestRequest;
-  onBuilderFormChange: (value: VwapBacktestRequest) => void;
+  builderForm: VwapBuilderFormState;
+  onBuilderFormChange: (value: VwapBuilderFormState) => void;
   strategyList: StrategyRead[];
   selectedStrategyId: number | null;
   onSelectStrategy: (id: number | null) => void;
@@ -3378,6 +3601,10 @@ function BuilderTab({
   regimeOptions,
   indicatorOptions,
   builderForm,
+  aiForecastFiles,
+  isAiForecastFilesLoading,
+  aiForecastCatalogueEntries,
+  isAiForecastCatalogueLoading,
   onBuilderFormChange,
   onRun,
   builderName,
@@ -3388,7 +3615,11 @@ function BuilderTab({
   kpiRows,
   metrics,
   equityCurveSeries,
+  baselineMetrics,
+  baselineEquityCurveSeries,
+  vwapComparison,
   latestBacktest,
+  includeSeries,
   trendExtraction,
   analysisStructured,
   isRunning,
@@ -3397,8 +3628,12 @@ function BuilderTab({
   presetOptions: string[];
   regimeOptions: string[];
   indicatorOptions: string[];
-  builderForm: VwapBacktestRequest;
-  onBuilderFormChange: (value: VwapBacktestRequest) => void;
+  builderForm: VwapBuilderFormState;
+  aiForecastFiles: AiForecastBacktestFile[];
+  isAiForecastFilesLoading: boolean;
+  aiForecastCatalogueEntries: AiForecastCatalogueEntry[];
+  isAiForecastCatalogueLoading: boolean;
+  onBuilderFormChange: (value: VwapBuilderFormState) => void;
   onRun: () => Promise<void>;
   builderName: string;
   onBuilderNameChange: (value: string) => void;
@@ -3408,7 +3643,11 @@ function BuilderTab({
   kpiRows: Array<{ label: string; value: string }>;
   metrics: ReturnType<typeof normalizeBacktestMetrics>;
   equityCurveSeries: Array<{ time: CandlePoint["time"]; value: number }>;
+  baselineMetrics: ReturnType<typeof normalizeBacktestMetrics>;
+  baselineEquityCurveSeries: Array<{ time: CandlePoint["time"]; value: number }>;
+  vwapComparison: NormalizedVwapBacktestResponse | null;
   latestBacktest: BacktestResponse | null;
+  includeSeries: boolean | null;
   trendExtraction: AnalysisTrendExtraction | null;
   analysisStructured: JsonRecord | null;
   isRunning: boolean;
@@ -3417,6 +3656,9 @@ function BuilderTab({
   const maxPositionUsdt = maxPositionPctToUsdt(
     builderForm.account_balance,
     builderForm.max_position_pct,
+  );
+  const hasSelectedAiFileInCatalog = aiForecastFiles.some(
+    (item) => item.file_name === builderForm.ai_forecast_file,
   );
 
   return (
@@ -3555,6 +3797,213 @@ function BuilderTab({
         analysisStructured={analysisStructured}
       />
 
+      <div className="grid gap-3 rounded-lg border border-border/70 bg-muted/20 p-3 md:grid-cols-2 lg:grid-cols-4">
+        <label className="flex items-center gap-2 pt-7 text-sm">
+          <input
+            type="checkbox"
+            checked={builderForm.include_series}
+            onChange={(event) =>
+              onBuilderFormChange({
+                ...builderForm,
+                include_series: event.target.checked,
+              })
+            }
+          />
+          include_series
+        </label>
+        <label className="flex items-center gap-2 pt-7 text-sm">
+          <input
+            type="checkbox"
+            checked={Boolean(builderForm.run_with_ai)}
+            onChange={(event) =>
+              onBuilderFormChange({
+                ...builderForm,
+                run_with_ai: event.target.checked,
+              })
+            }
+          />
+          run_with_ai
+        </label>
+        <NumericField
+          label="AI bull threshold %"
+          value={builderForm.ai_bull_confidence_threshold ?? 0}
+          onChange={(value) =>
+            onBuilderFormChange({
+              ...builderForm,
+              ai_bull_confidence_threshold:
+                value <= 0 ? null : Math.min(100, Math.max(0, value)),
+            })
+          }
+          min={0}
+          max={100}
+          step={0.1}
+        />
+        <NumericField
+          label="AI bear threshold %"
+          value={builderForm.ai_bear_confidence_threshold ?? 0}
+          onChange={(value) =>
+            onBuilderFormChange({
+              ...builderForm,
+              ai_bear_confidence_threshold:
+                value <= 0 ? null : Math.min(100, Math.max(0, value)),
+            })
+          }
+          min={0}
+          max={100}
+          step={0.1}
+        />
+        <div className="space-y-1 md:col-span-2 lg:col-span-4">
+          <Label text="AI Forecast Catalogue" />
+          {isAiForecastCatalogueLoading ? (
+            <div className="flex items-center gap-2 rounded-md border border-border/70 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+              <Loader2 className="size-3 animate-spin" />
+              Loading catalogue
+            </div>
+          ) : aiForecastCatalogueEntries.length > 0 ? (
+            <div className="overflow-auto rounded-md border border-border/70 bg-background/40">
+              <table className="min-w-full text-left text-xs">
+                <thead className="bg-muted/70 text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 font-medium">Forecast</th>
+                    <th className="px-3 py-2 font-medium">Config</th>
+                    <th className="px-3 py-2 font-medium">Win</th>
+                    <th className="px-3 py-2 font-medium">Sharpe</th>
+                    <th className="px-3 py-2 font-medium">Max DD %</th>
+                    <th className="px-3 py-2 font-medium">Ann. %</th>
+                    <th className="px-3 py-2 font-medium">Calmar</th>
+                    <th className="px-3 py-2 font-medium">Stability</th>
+                    <th className="px-3 py-2 font-medium">Updated</th>
+                    <th className="px-3 py-2" />
+                  </tr>
+                </thead>
+                <tbody>
+                  {aiForecastCatalogueEntries.slice(0, 6).map((entry) => (
+                    <tr
+                      key={entry.forecastId}
+                      className="border-t border-border/60"
+                    >
+                      <td className="max-w-[220px] px-3 py-2">
+                        <div className="truncate font-medium text-foreground">
+                          {entry.forecastId}
+                        </div>
+                        {entry.sourceFile ? (
+                          <div className="truncate text-[11px] text-muted-foreground">
+                            {entry.sourceFile}
+                          </div>
+                        ) : null}
+                      </td>
+                      <td className="px-3 py-2">{entry.aiConfigId ?? "-"}</td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, ["win_rate"], "%")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, ["sharpe_proxy"])}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, [
+                          "max_drawdown_pct",
+                          "max_drawdown",
+                        ], "%")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, [
+                          "annualized_return_pct",
+                          "annualized_return",
+                        ], "%")}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, [
+                          "calmar_ratio",
+                          "calmarRatio",
+                        ])}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatCatalogueMetric(entry.metrics, [
+                          "walk_forward_stability",
+                          "stability_score",
+                        ])}
+                      </td>
+                      <td className="px-3 py-2">
+                        {formatTimestamp(entry.generatedAt)}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        {entry.sourceFile ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() =>
+                              onBuilderFormChange({
+                                ...builderForm,
+                                run_with_ai: true,
+                                ai_forecast_file: entry.sourceFile ?? null,
+                              })
+                            }
+                          >
+                            Select
+                          </Button>
+                        ) : null}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <p className="rounded-md border border-border/70 bg-background/40 px-3 py-2 text-xs text-muted-foreground">
+              No catalogue entries matched the current symbol/timeframe.
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1 md:col-span-2 lg:col-span-4">
+          <Label text="AI forecast CSV fallback" />
+          <select
+            className={INPUT_CLASS}
+            value={builderForm.ai_forecast_file ?? ""}
+            disabled={isAiForecastFilesLoading || aiForecastFiles.length === 0}
+            onChange={(event) =>
+              onBuilderFormChange({
+                ...builderForm,
+                ai_forecast_file: event.target.value || null,
+              })
+            }
+          >
+            <option value="">
+              {isAiForecastFilesLoading
+                ? "Loading forecast files..."
+                : aiForecastFiles.length > 0
+                  ? "Select AI forecast CSV"
+                  : "No forecast CSV files available"}
+            </option>
+            {builderForm.ai_forecast_file && !hasSelectedAiFileInCatalog ? (
+              <option value={builderForm.ai_forecast_file}>
+                {builderForm.ai_forecast_file} - not found in current catalog
+              </option>
+            ) : null}
+            {aiForecastFiles.map((file) => (
+              <option key={file.file_name} value={file.file_name}>
+                {file.file_name} - updated {formatTimestamp(file.modified_at_utc)}
+              </option>
+            ))}
+          </select>
+          <p className="text-xs text-muted-foreground">
+            Source: `GET /api/v1/backtest/ai-forecast-files`
+          </p>
+        </div>
+        {builderForm.run_with_ai ? (
+          <Badge className="md:col-span-2 lg:col-span-4 w-fit bg-emerald-500/15 text-emerald-200">
+            AI Forecast: ON
+          </Badge>
+        ) : null}
+        {builderForm.run_with_ai &&
+        !isAiForecastFilesLoading &&
+        aiForecastFiles.length === 0 ? (
+          <p className="md:col-span-2 lg:col-span-4 rounded-md border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200">
+            AI mode enabled, but no forecast CSV files are available on backend.
+          </p>
+        ) : null}
+      </div>
+
       <div className="space-y-2">
         <Label text="Enabled indicators" />
         <div className="grid gap-2 md:grid-cols-3">
@@ -3614,11 +4063,15 @@ function BuilderTab({
           {isSaving ? "Saving..." : "Save Strategy"}
         </Button>
       </div>
-      <KpiGrid rows={kpiRows} />
+      <KpiGrid rows={kpiRows} summary={latestBacktest?.summary ?? null} />
       <BacktestEquitySection
         latestBacktest={latestBacktest}
         metrics={metrics}
         equityCurveSeries={equityCurveSeries}
+        baselineMetrics={baselineMetrics}
+        baselineEquityCurveSeries={baselineEquityCurveSeries}
+        vwapComparison={vwapComparison}
+        includeSeries={includeSeries}
       />
       <TradesTable trades={latestBacktest?.trades ?? []} />
     </div>
@@ -3648,6 +4101,10 @@ function StrategiesTab({
   latestBacktest,
   metrics,
   equityCurveSeries,
+  baselineMetrics,
+  baselineEquityCurveSeries,
+  vwapComparison,
+  includeSeries,
   isRunSavedPending,
   isDeletePending,
   isRunAtrPending,
@@ -3677,6 +4134,10 @@ function StrategiesTab({
   latestBacktest: BacktestResponse | null;
   metrics: ReturnType<typeof normalizeBacktestMetrics>;
   equityCurveSeries: Array<{ time: CandlePoint["time"]; value: number }>;
+  baselineMetrics: ReturnType<typeof normalizeBacktestMetrics>;
+  baselineEquityCurveSeries: Array<{ time: CandlePoint["time"]; value: number }>;
+  vwapComparison: NormalizedVwapBacktestResponse | null;
+  includeSeries: boolean | null;
   isRunSavedPending: boolean;
   isDeletePending: boolean;
   isRunAtrPending: boolean;
@@ -3837,6 +4298,10 @@ function StrategiesTab({
         latestBacktest={latestBacktest}
         metrics={metrics}
         equityCurveSeries={equityCurveSeries}
+        baselineMetrics={baselineMetrics}
+        baselineEquityCurveSeries={baselineEquityCurveSeries}
+        vwapComparison={vwapComparison}
+        includeSeries={includeSeries}
       />
       <TradesTable trades={latestBacktest?.trades ?? []} />
     </div>
@@ -5980,8 +6445,145 @@ function AuditTab({
   );
 }
 
-function KpiGrid({ rows }: { rows: Array<{ label: string; value: string }> }) {
-  if (rows.length === 0) {
+function asFiniteNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
+}
+
+function formatPrecision(value: unknown, digits: number) {
+  const numeric = asFiniteNumber(value);
+  if (numeric === null) {
+    return "-";
+  }
+  return numeric.toLocaleString(undefined, {
+    minimumFractionDigits: digits,
+    maximumFractionDigits: digits,
+  });
+}
+
+function formatCatalogueMetric(
+  metrics: JsonRecord | null | undefined,
+  keys: string[],
+  suffix = "",
+) {
+  const namespaces = ["ai", "delta", "baseline", "walkForwardStability"];
+  for (const key of keys) {
+    const value = valueAtPath(metrics, [key]);
+    const numeric = asFiniteNumber(value);
+    if (numeric !== null) {
+      return `${formatPrecision(numeric, 2)}${suffix}`;
+    }
+    if (value && typeof value === "object" && "stability_score" in value) {
+      const nested = asFiniteNumber(
+        (value as Record<string, unknown>).stability_score,
+      );
+      if (nested !== null) {
+        return `${formatPrecision(nested, 2)}${suffix}`;
+      }
+    }
+    for (const namespace of namespaces) {
+      const nestedValue = valueAtPath(metrics, [namespace, key]);
+      const nestedNumeric = asFiniteNumber(nestedValue);
+      if (nestedNumeric !== null) {
+        return `${formatPrecision(nestedNumeric, 2)}${suffix}`;
+      }
+    }
+  }
+  const nestedPath = valueAtPath(metrics, keys);
+  const nestedPathNumeric = asFiniteNumber(nestedPath);
+  if (nestedPathNumeric !== null) {
+    return `${formatPrecision(nestedPathNumeric, 2)}${suffix}`;
+  }
+  return "-";
+}
+
+function valueAtPath(value: unknown, path: string[]) {
+  let current = value;
+  for (const key of path) {
+    if (!current || typeof current !== "object") {
+      return undefined;
+    }
+    current = (current as Record<string, unknown>)[key];
+  }
+  return current;
+}
+
+function readSummaryMetric(
+  summary: JsonRecord,
+  summaryKeys: string[],
+  clientValueKeys: string[] = [],
+) {
+  for (const key of summaryKeys) {
+    const numeric = asFiniteNumber(summary[key]);
+    if (numeric !== null) {
+      return numeric;
+    }
+  }
+
+  const clientValues =
+    valueAtPath(summary, ["client_values"]) ?? valueAtPath(summary, ["clientValues"]);
+  if (!clientValues || typeof clientValues !== "object") {
+    return null;
+  }
+
+  for (const key of [...clientValueKeys, ...summaryKeys]) {
+    const numeric = asFiniteNumber((clientValues as Record<string, unknown>)[key]);
+    if (numeric !== null) {
+      return numeric;
+    }
+  }
+
+  return null;
+}
+
+function resolveR2QualityLabel(value: number | null) {
+  if (value === null) {
+    return {
+      label: "N/A",
+      className: "border-border bg-muted/40 text-muted-foreground",
+    };
+  }
+  if (value < 0.33) {
+    return {
+      label: "Low",
+      className: "border-red-400/35 bg-red-500/10 text-red-300",
+    };
+  }
+  if (value < 0.66) {
+    return {
+      label: "Medium",
+      className: "border-amber-400/35 bg-amber-500/10 text-amber-300",
+    };
+  }
+  return {
+    label: "High",
+    className: "border-emerald-400/35 bg-emerald-500/10 text-emerald-300",
+  };
+}
+
+function KpiGrid({
+  rows,
+  summary,
+}: {
+  rows: Array<{ label: string; value: string }>;
+  summary: JsonRecord | null;
+}) {
+  const rSquared = asFiniteNumber(summary?.r_squared);
+  const rCumulative = summary?.r_cumulative;
+  const avgR = summary?.avg_r;
+  const quality = resolveR2QualityLabel(rSquared);
+  const hasRMetrics =
+    rSquared !== null ||
+    asFiniteNumber(rCumulative) !== null ||
+    asFiniteNumber(avgR) !== null;
+
+  if (rows.length === 0 && !hasRMetrics) {
     return (
       <p className="text-sm text-muted-foreground">
         Run any backtest to populate KPIs and trade analytics.
@@ -5989,19 +6591,54 @@ function KpiGrid({ rows }: { rows: Array<{ label: string; value: string }> }) {
     );
   }
   return (
-    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-      {rows.slice(0, 12).map((row) => (
-        <Card key={row.label}>
+    <div className="space-y-3">
+      <div className="grid gap-3 md:grid-cols-3">
+        <Card>
           <CardHeader className="pb-2">
-            <CardDescription>{row.label}</CardDescription>
-            <CardTitle
-              className={`text-base ${formatKpiToneClass(row.label, row.value)}`}
-            >
-              {row.value}
+            <CardDescription className="flex items-center gap-2">
+              R²
+              <Badge variant="outline" className={quality.className}>
+                {quality.label}
+              </Badge>
+            </CardDescription>
+            <CardTitle className={`text-base ${formatKpiToneClass("r_squared", String(rSquared ?? "-"))}`}>
+              {formatPrecision(rSquared, 3)}
             </CardTitle>
           </CardHeader>
         </Card>
-      ))}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>R Cumulative</CardDescription>
+            <CardTitle className={`text-base ${formatSignedToneClass(asFiniteNumber(rCumulative) ?? 0)}`}>
+              {formatPrecision(rCumulative, 3)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+        <Card>
+          <CardHeader className="pb-2">
+            <CardDescription>Avg R</CardDescription>
+            <CardTitle className={`text-base ${formatSignedToneClass(asFiniteNumber(avgR) ?? 0)}`}>
+              {formatPrecision(avgR, 3)}
+            </CardTitle>
+          </CardHeader>
+        </Card>
+      </div>
+      {rows.length > 0 ? (
+        <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
+          {rows.slice(0, 12).map((row) => (
+            <Card key={row.label}>
+              <CardHeader className="pb-2">
+                <CardDescription>{row.label}</CardDescription>
+                <CardTitle
+                  className={`text-base ${formatKpiToneClass(row.label, row.value)}`}
+                >
+                  {row.value}
+                </CardTitle>
+              </CardHeader>
+            </Card>
+          ))}
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -6010,60 +6647,444 @@ function BacktestEquitySection({
   latestBacktest,
   metrics,
   equityCurveSeries,
+  baselineMetrics,
+  baselineEquityCurveSeries = [],
+  vwapComparison,
+  includeSeries = null,
 }: {
   latestBacktest: BacktestResponse | null;
   metrics: ReturnType<typeof normalizeBacktestMetrics>;
   equityCurveSeries: Array<{ time: CandlePoint["time"]; value: number }>;
+  baselineMetrics?: ReturnType<typeof normalizeBacktestMetrics>;
+  baselineEquityCurveSeries?: Array<{ time: CandlePoint["time"]; value: number }>;
+  vwapComparison?: NormalizedVwapBacktestResponse | null;
+  includeSeries?: boolean | null;
 }) {
+  const [curveMode, setCurveMode] = useState<"equity" | "r">("equity");
+
   if (!latestBacktest || !metrics) {
     return null;
   }
+
+  const summary = (latestBacktest.summary ?? {}) as JsonRecord;
+  const baselineSummary = (vwapComparison?.baseline?.summary ?? {}) as JsonRecord;
+  const isAiMode = vwapComparison?.mode === "ai";
+  const comparison = vwapComparison?.comparison ?? null;
+  const primaryTrades = Number(summary.total_trades ?? latestBacktest.trades.length);
+  const baselineTrades = Number(
+    baselineSummary.total_trades ?? vwapComparison?.baseline?.trades.length ?? 0,
+  );
+  const primaryWinRate = Number(summary.win_rate ?? 0);
+  const baselineWinRate = Number(baselineSummary.win_rate ?? 0);
+  const primaryProfitFactor = Number(
+    summary.profit_factor ?? summary.profitFactor ?? 0,
+  );
+  const baselineProfitFactor = Number(
+    baselineSummary.profit_factor ?? baselineSummary.profitFactor ?? 0,
+  );
+  const primaryMaxDrawdown =
+    readSummaryMetric(
+      summary,
+      ["max_drawdown_pct", "max_drawdown"],
+      ["maxDrawdownPct", "maxDrawdown"],
+    ) ?? 0;
+  const baselineMaxDrawdown =
+    readSummaryMetric(
+      baselineSummary,
+      ["max_drawdown_pct", "max_drawdown"],
+      ["maxDrawdownPct", "maxDrawdown"],
+    ) ?? 0;
+  const primaryAnnualizedReturn = readSummaryMetric(
+    summary,
+    ["annualized_return_pct", "annualized_return"],
+    ["annualizedReturnPct", "annualizedReturn"],
+  );
+  const baselineAnnualizedReturn = readSummaryMetric(
+    baselineSummary,
+    ["annualized_return_pct", "annualized_return"],
+    ["annualizedReturnPct", "annualizedReturn"],
+  );
+  const primaryCalmar = readSummaryMetric(
+    summary,
+    ["calmar_ratio", "calmar"],
+    ["calmarRatio"],
+  );
+  const baselineCalmar = readSummaryMetric(
+    baselineSummary,
+    ["calmar_ratio", "calmar"],
+    ["calmarRatio"],
+  );
+  const primarySharpe = Number(summary.sharpe_proxy ?? 0);
+  const baselineSharpe = Number(baselineSummary.sharpe_proxy ?? 0);
+  const deltaRCumulative =
+    asFiniteNumber(summary.r_cumulative) !== null &&
+    asFiniteNumber(baselineSummary.r_cumulative) !== null
+      ? Number(summary.r_cumulative) - Number(baselineSummary.r_cumulative)
+      : null;
+  const deltaAvgR =
+    asFiniteNumber(summary.avg_r) !== null &&
+    asFiniteNumber(baselineSummary.avg_r) !== null
+      ? Number(summary.avg_r) - Number(baselineSummary.avg_r)
+      : null;
+  const deltaTotalR =
+    asFiniteNumber(summary.total_r) !== null &&
+    asFiniteNumber(baselineSummary.total_r) !== null
+      ? Number(summary.total_r) - Number(baselineSummary.total_r)
+      : null;
+  const deltaMaxDrawdown =
+    asFiniteNumber(comparison?.max_drawdown_delta) ??
+    (asFiniteNumber(summary.max_drawdown) !== null &&
+    asFiniteNumber(baselineSummary.max_drawdown) !== null
+      ? Number(summary.max_drawdown) - Number(baselineSummary.max_drawdown)
+      : null);
+  const deltaSharpe =
+    asFiniteNumber(comparison?.sharpe_proxy_delta) ??
+    (asFiniteNumber(summary.sharpe_proxy) !== null &&
+    asFiniteNumber(baselineSummary.sharpe_proxy) !== null
+      ? Number(summary.sharpe_proxy) - Number(baselineSummary.sharpe_proxy)
+      : null);
+  const deltaCalmar =
+    asFiniteNumber(comparison?.calmar_ratio_delta) ??
+    (primaryCalmar !== null && baselineCalmar !== null
+      ? primaryCalmar - baselineCalmar
+      : null);
+
+  const toSyntheticTimestamp = (index: number): CandlePoint["time"] =>
+    (1_700_000_000 + index) as CandlePoint["time"];
+  const mapNumericCurveToSeries = (
+    values: unknown,
+    timeReference: Array<CandlePoint["time"]>,
+  ): Array<{ time: CandlePoint["time"]; value: number }> => {
+    if (!Array.isArray(values)) {
+      return [];
+    }
+    const points: Array<{ time: CandlePoint["time"]; value: number }> = [];
+    for (let index = 0; index < values.length; index += 1) {
+      const value = asFiniteNumber(values[index]);
+      if (value === null) {
+        continue;
+      }
+      points.push({
+        time: timeReference[index] ?? toSyntheticTimestamp(index),
+        value,
+      });
+    }
+    return points;
+  };
+
+  const primaryChartPoints = (latestBacktest.chart_points ?? {}) as JsonRecord;
+  const baselineChartPoints = (vwapComparison?.baseline?.chart_points ?? {}) as JsonRecord;
+  const primaryTimeReference = equityCurveSeries.map((point) => point.time);
+  const baselineTimeReference = baselineEquityCurveSeries.map((point) => point.time);
+
+  const primaryRCumulativeSeries = mapNumericCurveToSeries(
+    primaryChartPoints.r_cumulative_curve,
+    primaryTimeReference,
+  );
+  const primaryREquitySeries = mapNumericCurveToSeries(
+    primaryChartPoints.r_equity_curve,
+    primaryTimeReference,
+  );
+  const baselineRCumulativeSeries = mapNumericCurveToSeries(
+    baselineChartPoints.r_cumulative_curve,
+    baselineTimeReference,
+  );
+  const baselineREquitySeries = mapNumericCurveToSeries(
+    baselineChartPoints.r_equity_curve,
+    baselineTimeReference,
+  );
+  const hasBaselineRSeries =
+    baselineRCumulativeSeries.length > 0 || baselineREquitySeries.length > 0;
+  const hasBaselineEquitySeries = baselineEquityCurveSeries.length > 0;
+  const showBaselineHiddenByApiHint =
+    isAiMode &&
+    vwapComparison?.baseline !== null &&
+    !hasBaselineEquitySeries &&
+    !hasBaselineRSeries;
+
+  const equitySeries =
+    isAiMode && baselineEquityCurveSeries.length > 0
+      ? [
+          {
+            id: "equity-ai",
+            label: "Result (AI)",
+            points: equityCurveSeries,
+            color: "hsl(165 78% 45%)",
+            lineWidth: 3 as const,
+            priceLineVisible: true,
+            lastValueVisible: true,
+          },
+          {
+            id: "equity-baseline",
+            label: "Baseline (No AI)",
+            points: baselineEquityCurveSeries,
+            color: "hsl(218 82% 68%)",
+            lineStyle: "dashed" as const,
+            lineWidth: 2 as const,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          },
+        ]
+      : undefined;
+
+  const rCurveSeries = [
+    {
+      id: "r-cumulative-primary",
+      label: isAiMode ? "R cumulative (Result AI)" : "R cumulative",
+      points: primaryRCumulativeSeries,
+      color: "hsl(165 78% 45%)",
+      lineWidth: 3 as const,
+      priceLineVisible: true,
+      lastValueVisible: true,
+    },
+    {
+      id: "r-equity-primary",
+      label: isAiMode ? "R equity (Result AI)" : "R equity",
+      points: primaryREquitySeries,
+      color: "hsl(165 78% 45%)",
+      lineStyle: "dashed" as const,
+      lineWidth: 2 as const,
+      priceLineVisible: false,
+      lastValueVisible: false,
+    },
+    ...(isAiMode
+      ? [
+          {
+            id: "r-cumulative-baseline",
+            label: "R cumulative (Baseline)",
+            points: baselineRCumulativeSeries,
+            color: "hsl(218 82% 68%)",
+            lineStyle: "solid" as const,
+            lineWidth: 2 as const,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          },
+          {
+            id: "r-equity-baseline",
+            label: "R equity (Baseline)",
+            points: baselineREquitySeries,
+            color: "hsl(218 82% 68%)",
+            lineStyle: "dotted" as const,
+            lineWidth: 1 as const,
+            priceLineVisible: false,
+            lastValueVisible: false,
+          },
+        ]
+      : []),
+  ];
 
   return (
     <div className="space-y-3 rounded-xl border border-border/70 bg-muted/10 p-3 md:p-4">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm font-medium">Equity curve</p>
-        <Badge variant="outline">Backtest result</Badge>
+        {isAiMode ? (
+          <Badge className="bg-emerald-500/15 text-emerald-200">AI Forecast: ON</Badge>
+        ) : (
+          <Badge variant="outline">Backtest result</Badge>
+        )}
       </div>
-      <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <CardHeader className="space-y-1 pb-2">
-            <CardDescription>Initial balance</CardDescription>
-            <CardTitle className="text-base">
-              ${formatCellValue(metrics.initialBalance)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="space-y-1 pb-2">
-            <CardDescription>Final balance</CardDescription>
-            <CardTitle className="text-base">
-              ${formatCellValue(metrics.finalBalance)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="space-y-1 pb-2">
-            <CardDescription>Total PnL</CardDescription>
-            <CardTitle
-              className={`text-base ${formatSignedToneClass(metrics.totalPnl)}`}
+      {isAiMode ? (
+        <div className="grid gap-2 xl:grid-cols-3">
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Result (AI)</CardDescription>
+              <CardTitle className="text-sm">
+                Trades: {formatCellValue(primaryTrades)} | Win rate:{" "}
+                {formatCellValue(primaryWinRate)}%
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Profit factor: {formatCellValue(primaryProfitFactor)} | Final: $
+                {formatCellValue(metrics.finalBalance)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Max DD: {formatCellValue(primaryMaxDrawdown)}% | Sharpe:{" "}
+                {formatCellValue(primarySharpe)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Annualized: {formatCellValue(primaryAnnualizedReturn)}% | Calmar:{" "}
+                {formatCellValue(primaryCalmar)}
+              </p>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Baseline (No AI)</CardDescription>
+              <CardTitle className="text-sm">
+                Trades: {formatCellValue(baselineTrades)} | Win rate:{" "}
+                {formatCellValue(baselineWinRate)}%
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Profit factor: {formatCellValue(baselineProfitFactor)} | Final: $
+                {formatCellValue(baselineMetrics?.finalBalance)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Max DD: {formatCellValue(baselineMaxDrawdown)}% | Sharpe:{" "}
+                {formatCellValue(baselineSharpe)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Annualized: {formatCellValue(baselineAnnualizedReturn)}% | Calmar:{" "}
+                {formatCellValue(baselineCalmar)}
+              </p>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Delta</CardDescription>
+              <CardTitle
+                className={`text-sm ${formatSignedToneClass(comparison?.total_pnl_delta ?? 0)}`}
+              >
+                Total PnL: {formatSignedMetric(comparison?.total_pnl_delta)}
+              </CardTitle>
+              <p className="text-xs text-muted-foreground">
+                Win rate: {formatSignedMetric(comparison?.win_rate_delta)}% | Trades:{" "}
+                {formatSignedMetric(comparison?.trades_delta)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Max DD: {formatSignedMetric(deltaMaxDrawdown)} | Sharpe:{" "}
+                {formatSignedMetric(deltaSharpe)} | Calmar:{" "}
+                {formatSignedMetric(deltaCalmar)}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                R cumulative:{" "}
+                <span className={formatSignedToneClass(deltaRCumulative ?? 0)}>
+                  {deltaRCumulative === null
+                    ? "-"
+                    : `${deltaRCumulative >= 0 ? "+" : ""}${formatPrecision(deltaRCumulative, 3)}`}
+                </span>{" "}
+                | Avg R:{" "}
+                <span className={formatSignedToneClass(deltaAvgR ?? 0)}>
+                  {deltaAvgR === null
+                    ? "-"
+                    : `${deltaAvgR >= 0 ? "+" : ""}${formatPrecision(deltaAvgR, 3)}`}
+                </span>{" "}
+                | Total R:{" "}
+                <span className={formatSignedToneClass(deltaTotalR ?? 0)}>
+                  {deltaTotalR === null
+                    ? "-"
+                    : `${deltaTotalR >= 0 ? "+" : ""}${formatPrecision(deltaTotalR, 3)}`}
+                </span>
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {Number(comparison?.total_pnl_delta ?? 0) > 0
+                  ? "AI improved the result."
+                  : Number(comparison?.total_pnl_delta ?? 0) < 0
+                    ? "AI degraded the result."
+                    : "AI result equals baseline."}
+              </p>
+            </CardHeader>
+          </Card>
+        </div>
+      ) : (
+        <div className="grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Initial balance</CardDescription>
+              <CardTitle className="text-base">
+                ${formatCellValue(metrics.initialBalance)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Final balance</CardDescription>
+              <CardTitle className="text-base">
+                ${formatCellValue(metrics.finalBalance)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Total PnL</CardDescription>
+              <CardTitle
+                className={`text-base ${formatSignedToneClass(metrics.totalPnl)}`}
+              >
+                ${formatCellValue(metrics.totalPnl)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Avg risk / trade</CardDescription>
+              <CardTitle className="text-base">
+                ${formatCellValue(metrics.avgRiskPerTrade)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Max drawdown %</CardDescription>
+              <CardTitle
+                className={`text-base ${formatKpiToneClass("max_drawdown_pct", formatCellValue(primaryMaxDrawdown))}`}
+              >
+                {formatCellValue(primaryMaxDrawdown)}%
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Annualized return %</CardDescription>
+              <CardTitle
+                className={`text-base ${formatSignedToneClass(primaryAnnualizedReturn ?? 0)}`}
+              >
+                {formatCellValue(primaryAnnualizedReturn)}%
+              </CardTitle>
+            </CardHeader>
+          </Card>
+          <Card>
+            <CardHeader className="space-y-1 pb-2">
+              <CardDescription>Calmar ratio</CardDescription>
+              <CardTitle
+                className={`text-base ${formatKpiToneClass("calmar_ratio", formatCellValue(primaryCalmar))}`}
+              >
+                {formatCellValue(primaryCalmar)}
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        </div>
+      )}
+      {includeSeries === false ? (
+        <p className="rounded-md border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 md:text-sm">
+          Chart series were skipped (`include_series=false`). Re-run backtest with
+          `include_series=true` to render Equity and R curves.
+        </p>
+      ) : (
+        <>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant={curveMode === "equity" ? "default" : "outline"}
+              onClick={() => setCurveMode("equity")}
             >
-              ${formatCellValue(metrics.totalPnl)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-        <Card>
-          <CardHeader className="space-y-1 pb-2">
-            <CardDescription>Avg risk / trade</CardDescription>
-            <CardTitle className="text-base">
-              ${formatCellValue(metrics.avgRiskPerTrade)}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-      </div>
-      <div className="rounded-xl border border-border/70 bg-linear-to-b from-background to-muted/25 p-2 md:p-4">
-        <EquityCurveChart points={equityCurveSeries} />
-      </div>
+              Equity
+            </Button>
+            <Button
+              size="sm"
+              variant={curveMode === "r" ? "default" : "outline"}
+              onClick={() => setCurveMode("r")}
+            >
+              R Curve
+            </Button>
+          </div>
+          <div className="rounded-xl border border-border/70 bg-linear-to-b from-background to-muted/25 p-2 md:p-4">
+            {curveMode === "equity" ? (
+              <EquityCurveChart points={equityCurveSeries} series={equitySeries} />
+            ) : (
+              <EquityCurveChart series={rCurveSeries} />
+            )}
+          </div>
+        </>
+      )}
+      {showBaselineHiddenByApiHint ? (
+        <p className="text-xs text-muted-foreground">
+          Baseline chart hidden by API design.
+        </p>
+      ) : null}
+      {isAiMode ? (
+        <p className="text-xs text-muted-foreground">
+          AI mode compares equity from trades for both lines; baseline chart series can be
+          empty by design.
+        </p>
+      ) : null}
     </div>
   );
 }
@@ -6075,7 +7096,28 @@ function TradesTable({ trades }: { trades: JsonRecord[] }) {
     );
   }
   const displayTrades = trades.map((trade) => normalizeTradeForDisplay(trade));
-  const headers = Object.keys(displayTrades[0]).slice(0, 8);
+  const discoveredHeaders = new Set<string>();
+  for (const trade of displayTrades) {
+    for (const key of Object.keys(trade)) {
+      discoveredHeaders.add(key);
+    }
+  }
+  const orderedPriority = [
+    "entryTime",
+    "exitTime",
+    "side",
+    "entryPrice",
+    "exitPrice",
+    "pnl_usdt",
+    "r_multiple",
+    "outcome",
+  ];
+  const remainingHeaders = Array.from(discoveredHeaders).filter(
+    (header) => !orderedPriority.includes(header),
+  );
+  const headers = [...orderedPriority, ...remainingHeaders]
+    .filter((header) => discoveredHeaders.has(header))
+    .slice(0, 10);
   return (
     <div className="max-h-96 overflow-auto overscroll-contain rounded-md border border-border/70 bg-background/35">
       <table className="w-full min-w-[640px] text-xs md:text-sm">
@@ -6339,6 +7381,13 @@ function formatCellValue(value: unknown) {
   return JSON.stringify(value);
 }
 
+function formatSignedMetric(value: unknown) {
+  if (typeof value !== "number" || Number.isNaN(value)) {
+    return "-";
+  }
+  return `${value >= 0 ? "+" : ""}${formatCellValue(value)}`;
+}
+
 function getTradeValue(trade: JsonRecord, keys: string[]): unknown {
   for (const key of keys) {
     if (key in trade) {
@@ -6365,6 +7414,7 @@ function normalizeTradeForDisplay(trade: JsonRecord): JsonRecord {
     ["entryTime", ["entryTime", "entry_time"]],
     ["exitTime", ["exitTime", "exit_time"]],
     ["entryPrice", ["entryPrice", "entry"]],
+    ["r_multiple", ["r_multiple", "rMultiple"]],
   ];
 
   for (const [canonicalKey, aliases] of canonicalFieldAliases) {
@@ -6511,6 +7561,22 @@ function resolveTradeOutcome(trade: JsonRecord): TradeOutcomeView {
 
 function renderTradeCellValue(header: string, value: unknown): ReactNode {
   const normalizedHeader = header.trim().toLowerCase();
+  if (normalizedHeader === "r_multiple" || normalizedHeader === "rmultiple") {
+    if (value === null || value === undefined) {
+      return (
+        <span className="text-muted-foreground" title="Risk not derivable">
+          N/A
+        </span>
+      );
+    }
+    if (typeof value === "number") {
+      return (
+        <span className={formatSignedToneClass(value)}>
+          {formatPrecision(value, 3)}
+        </span>
+      );
+    }
+  }
   if (normalizedHeader === "side" && typeof value === "string") {
     return (
       <span
@@ -6572,6 +7638,16 @@ function formatKpiToneClass(label: string, value: string) {
       return "text-emerald-300";
     }
     if (numericValue > 20) {
+      return "text-red-300";
+    }
+    return "text-amber-300";
+  }
+
+  if (normalizedLabel.includes("calmar")) {
+    if (numericValue >= 1) {
+      return "text-emerald-300";
+    }
+    if (numericValue < 0.3) {
       return "text-red-300";
     }
     return "text-amber-300";

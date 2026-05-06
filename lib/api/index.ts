@@ -3,8 +3,10 @@ export * from "@/lib/api/retry";
 export * from "@/lib/api/types";
 
 export * from "@/lib/api/services/ai";
+export * from "@/lib/api/services/ai-backtests";
 export * from "@/lib/api/services/analysis";
 export * from "@/lib/api/services/account-trades";
+export * from "@/lib/api/services/admin-runtime";
 export * from "@/lib/api/services/auth";
 export * from "@/lib/api/services/audit";
 export * from "@/lib/api/services/backtest";
