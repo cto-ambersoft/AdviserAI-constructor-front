@@ -3,6 +3,8 @@
 import { INPUT_CLASS, Label } from "@/components/trading/form-controls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { AutoTradeAiOverlaySection } from "@/components/auto-trade/auto-trade-ai-overlay-section";
+import { AutoTradeRiskGovernanceSection } from "@/components/auto-trade/auto-trade-risk-section";
 import { AutoTradeStrategyProfileSection } from "@/components/auto-trade/auto-trade-strategy-profile-section";
 import type { AutoTradeFormState } from "@/components/auto-trade/types";
 import { isSupportedAutoTradeExchange } from "@/components/auto-trade/utils";
@@ -132,6 +134,47 @@ export function AutoTradeConfigForm({
               );
             })}
           </select>
+        </div>
+
+        <div className="space-y-1">
+          <Label text="Strategy name (optional)" />
+          <input
+            type="text"
+            className={INPUT_CLASS}
+            value={form.strategy_name ?? ""}
+            maxLength={64}
+            placeholder="e.g. BTC-VWAP-Asia"
+            onChange={(event) =>
+              onChange((prev) => ({
+                ...prev,
+                strategy_name: event.target.value.length > 0 ? event.target.value : null,
+              }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Shown in the multi-strategy switcher. Defaults to the profile symbol.
+          </p>
+        </div>
+
+        <div className="space-y-1">
+          <Label text="Attached forecast (optional)" />
+          <input
+            type="text"
+            className={INPUT_CLASS}
+            value={form.attached_forecast_id ?? ""}
+            maxLength={64}
+            placeholder="forecastId from the AI Forecast Catalogue"
+            onChange={(event) =>
+              onChange((prev) => ({
+                ...prev,
+                attached_forecast_id:
+                  event.target.value.length > 0 ? event.target.value : null,
+              }))
+            }
+          />
+          <p className="text-xs text-muted-foreground">
+            Links this live strategy to a validated catalogue forecast (provenance).
+          </p>
         </div>
 
         <NumberInput
@@ -340,6 +383,17 @@ export function AutoTradeConfigForm({
             strategy_profile: updater(prev.strategy_profile),
           }))
         }
+      />
+
+      <AutoTradeRiskGovernanceSection
+        value={form.risk}
+        onChange={(updater) =>
+          onChange((prev) => ({ ...prev, risk: updater(prev.risk) }))
+        }
+      />
+
+      <AutoTradeAiOverlaySection
+        accountId={form.account_id ?? undefined}
       />
 
       {isOkxSelected ? (

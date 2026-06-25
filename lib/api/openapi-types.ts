@@ -21,6 +21,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/health/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** AI agent data-freshness snapshot for the current user */
+        get: operations["get_agent_freshness_api_v1_health_agents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/signup": {
         parameters: {
             query?: never;
@@ -49,6 +66,54 @@ export interface paths {
         put?: never;
         /** Sign In */
         post: operations["sign_in_api_v1_auth_signin_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/login/email/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Login Email Code
+         * @description Email an ``email_2fa_login`` code for the user behind a valid login challenge.
+         *
+         *     The challenge token is validated first (it proves the password already passed),
+         *     so this can't be used for user enumeration; rate-limited per source IP. To avoid
+         *     enumeration, a user without email-2FA still yields a generic ``sent: True`` (no
+         *     code is actually sent).
+         */
+        post: operations["request_login_email_code_api_v1_auth_2fa_login_email_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Login 2Fa
+         * @description Second step of login-2FA: exchange the challenge + a second-factor code for the
+         *     token pair. ``method=totp`` (default) reuses TotpService.verify (brute-force
+         *     lockout + recovery-code fallback); ``method=email`` consumes an emailed
+         *     ``email_2fa_login`` code requested via /2fa/login/email/request.
+         */
+        post: operations["login_2fa_api_v1_auth_2fa_login_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -89,6 +154,235 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/auth/2fa/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Enroll 2Fa */
+        post: operations["enroll_2fa_api_v1_auth_2fa_enroll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify 2Fa */
+        post: operations["verify_2fa_api_v1_auth_2fa_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status 2Fa */
+        get: operations["status_2fa_api_v1_auth_2fa_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/step-up/email/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Step Up Email Code
+         * @description Email an ``email_2fa_step_up`` code for a user with email-2FA enrolled. The
+         *     code is then submitted to /2fa/step-up with ``method=email``. Rate-limited.
+         */
+        post: operations["request_step_up_email_code_api_v1_auth_2fa_step_up_email_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/step-up": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Step Up 2Fa
+         * @description Exchange a fresh second-factor code for a short-lived step-up token used to
+         *     authorize critical actions. Accepts either a TOTP/recovery code (``method=totp``,
+         *     default) or an emailed code (``method=email``). The minted token is
+         *     factor-agnostic, so ``require_step_up`` and the gated-endpoint list are unchanged.
+         */
+        post: operations["step_up_2fa_api_v1_auth_2fa_step_up_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disable 2Fa */
+        delete: operations["disable_2fa_api_v1_auth_2fa_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/email/enroll": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Enroll Email 2Fa
+         * @description Begin email-2FA enrollment: email a code the user must confirm (verify-on-
+         *     enroll — the account email is not implicitly trusted). Requires Resend to be
+         *     configured (503 otherwise). Throttled per user to prevent email-bombing.
+         */
+        post: operations["enroll_email_2fa_api_v1_auth_2fa_email_enroll_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/email/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Confirm Email 2Fa
+         * @description Confirm enrollment with the emailed code → activates email-2FA. Wrong/expired
+         *     code → 400; per-factor lockout → 429.
+         */
+        post: operations["confirm_email_2fa_api_v1_auth_2fa_email_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/email/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Status Email 2Fa */
+        get: operations["status_email_2fa_api_v1_auth_2fa_email_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/2fa/email": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Disable Email 2Fa */
+        delete: operations["disable_email_2fa_api_v1_auth_2fa_email_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email-confirm/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Request Email Confirmation
+         * @description T20 (W11c): email a one-time confirmation code for a critical action.
+         *
+         *     Disabled (503) when Resend isn't configured — existing flows are unaffected.
+         *     Throttled per user to prevent email-bombing.
+         */
+        post: operations["request_email_confirmation_api_v1_auth_email_confirm_request_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/auth/email-confirm/verify": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Email Confirmation */
+        post: operations["verify_email_confirmation_api_v1_auth_email_confirm_verify_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/internal/backtest/ai-forecast-files": {
         parameters: {
             query?: never;
@@ -117,6 +411,23 @@ export interface paths {
         put?: never;
         /** Run an internal AI-vs-baseline backtest comparison */
         post: operations["compare_internal_api_v1_internal_backtest_compare_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/internal/agent-outcomes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Realized trade outcomes by decision event id */
+        get: operations["agent_outcomes_api_v1_internal_agent_outcomes_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -357,23 +668,6 @@ export interface paths {
         put?: never;
         /** Run portfolio backtest */
         post: operations["run_portfolio_api_v1_backtest_portfolio_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v1/exchange/encrypt": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Encrypt exchange secrets */
-        post: operations["encrypt_exchange_secrets_api_v1_exchange_encrypt_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -706,6 +1000,75 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/auto-trade/strategies/{config_id}/promotion-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Promotion KPI-Gate readiness for a strategy */
+        get: operations["get_strategy_promotion_status_api_v1_live_auto_trade_strategies__config_id__promotion_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/strategies/{config_id}/promote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Promote a sandbox strategy to live (step-up required) */
+        post: operations["promote_strategy_api_v1_live_auto_trade_strategies__config_id__promote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/strategies/{config_id}/demote": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Demote a live strategy back to sandbox (step-up required) */
+        post: operations["demote_strategy_api_v1_live_auto_trade_strategies__config_id__demote_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/ai-overlay/config": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get AI trend overlay config */
+        get: operations["get_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_get"];
+        /** Update AI trend overlay config */
+        put: operations["update_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/live/auto-trade/play": {
         parameters: {
             query?: never;
@@ -740,6 +1103,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/auto-trade/close-positions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Manually flatten every open auto-trade position
+         * @description Two-step destructive operation. First call with ``confirm: false`` returns HTTP 412 with a preview of every position that would be closed (symbol, side, quantity, conditional-order count). Re-send with ``confirm: true`` to actually cancel TP/SL and market-close. Independent from ``/auto-trade/stop``: this does not flip ``is_running``.
+         */
+        post: operations["close_auto_trade_positions_api_v1_live_auto_trade_close_positions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/live/auto-trade/state": {
         parameters: {
             query?: never;
@@ -749,6 +1132,40 @@ export interface paths {
         };
         /** Get auto-trade runtime state */
         get: operations["get_auto_trade_state_api_v1_live_auto_trade_state_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/strategies/{config_id}/health": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Strategy health score (composite of win rate, drawdown, PnL, stability) */
+        get: operations["get_strategy_health_api_v1_live_auto_trade_strategies__config_id__health_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/positions/{position_id}/trace": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Post-trade execution trace (signal → close timeline) for a position */
+        get: operations["get_position_trace_api_v1_live_auto_trade_positions__position_id__trace_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -808,6 +1225,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/live/auto-trade/portfolio": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Aggregated portfolio view across all strategies
+         * @description Returns one row per :class:`AutoTradeConfig` owned by the user, with realized/unrealized PnL, open position count, and live sub-account balance. Balance fetches run in parallel; one failing exchange surfaces as ``balance_error`` on that row instead of failing the whole response.
+         */
+        get: operations["get_auto_trade_portfolio_api_v1_live_auto_trade_portfolio_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/play-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Start every enabled strategy for the user
+         * @description Bulk variant of ``/auto-trade/play``. Skips configs that are disabled or already running. One failure does not abort the others — every config gets its own per-row outcome.
+         */
+        post: operations["play_all_auto_trade_api_v1_live_auto_trade_play_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/stop-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Stop every running strategy for the user
+         * @description Bulk variant of ``/auto-trade/stop``. Only flips ``is_running=false`` — open positions are deliberately not closed. Use ``/auto-trade/close-positions`` (per account) when you want to flatten.
+         */
+        post: operations["stop_all_auto_trade_api_v1_live_auto_trade_stop_all_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/balance": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * USDT balance for one strategy's sub-account
+         * @description Powers the per-strategy budget card. Returns the free/total USDT balance fetched live from the exchange. ``error`` non-null means the fetch failed; the dashboard treats it as 'balance unavailable'.
+         */
+        get: operations["get_auto_trade_balance_api_v1_live_auto_trade_balance_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/notifications/telegram": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Telegram notification settings */
+        get: operations["get_telegram_settings_api_v1_live_notifications_telegram_get"];
+        /** Update Telegram notification settings */
+        put: operations["update_telegram_settings_api_v1_live_notifications_telegram_put"];
+        post?: never;
+        /** Unlink Telegram notifications */
+        delete: operations["unlink_telegram_api_v1_live_notifications_telegram_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/notifications/telegram/link": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate a one-time Telegram deep link */
+        post: operations["link_telegram_api_v1_live_notifications_telegram_link_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/notifications/telegram/test": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send a Telegram test notification */
+        post: operations["test_telegram_api_v1_live_notifications_telegram_test_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/events/stream": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Live risk/governance event stream (SSE)
+         * @description Push the authenticated user's streamable events (kill-switch, KPI-guard,
+         *     portfolio-DD halt, data-stale, …) as Server-Sent Events.
+         *
+         *     Note: browser ``EventSource`` cannot set an Authorization header, so the
+         *     frontend passes the bearer token via the proxy/cookie layer. The generator
+         *     stops cleanly on client disconnect and on server shutdown (CancelledError).
+         */
+        get: operations["stream_events_api_v1_events_stream_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/runtime": {
         parameters: {
             query?: never;
@@ -817,6 +1392,23 @@ export interface paths {
         };
         /** Get runtime data for all users (admin) */
         get: operations["get_admin_runtime_snapshot_api_v1_admin_runtime_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-configs/schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Config Schema */
+        get: operations["get_ai_config_schema_api_v1_ai_backtests_ai_configs_schema_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -842,6 +1434,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ai-backtests/agents": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Agents */
+        get: operations["list_agents_api_v1_ai_backtests_agents_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/ai-backtests/agent-weights": {
         parameters: {
             query?: never;
@@ -851,6 +1460,23 @@ export interface paths {
         };
         /** List Agent Weights */
         get: operations["list_agent_weights_api_v1_ai_backtests_agent_weights_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/ai-forecast-catalogue/metrics-schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Metrics Schema */
+        get: operations["get_metrics_schema_api_v1_ai_backtests_ai_forecast_catalogue_metrics_schema_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -1023,6 +1649,40 @@ export interface paths {
         put?: never;
         /** Apply Agent Weight Suggestion */
         post: operations["apply_agent_weight_suggestion_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__apply_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/artifacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Export Artifacts */
+        get: operations["list_export_artifacts_api_v1_ai_backtests_artifacts_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ai-backtests/artifacts/{filename}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Export Artifact */
+        get: operations["get_export_artifact_api_v1_ai_backtests_artifacts__filename__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -1254,6 +1914,28 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * AccountBalanceResponse
+         * @description USDT balance snapshot for one strategy's sub-account.
+         *
+         *     Drives the per-strategy budget card. ``error`` non-null means the adapter
+         *     call failed; the dashboard treats those as 'balance unavailable' and
+         *     falls back to local margin-used figures.
+         */
+        AccountBalanceResponse: {
+            /** Account Id */
+            account_id: number;
+            /** Exchange Name */
+            exchange_name: string;
+            /** Mode */
+            mode: string;
+            /** Free Usdt */
+            free_usdt: number | null;
+            /** Total Usdt */
+            total_usdt: number | null;
+            /** Error */
+            error?: string | null;
+        };
         /** AccountTradeRead */
         AccountTradeRead: {
             /** Exchange Trade Id */
@@ -1295,6 +1977,14 @@ export interface components {
             base_currency: string;
             /** Quote Currency */
             quote_currency: string;
+            /** Gross Realized Usdt */
+            gross_realized_usdt?: number | null;
+            /** Commission Usdt */
+            commission_usdt?: number | null;
+            /** Funding Usdt */
+            funding_usdt?: number | null;
+            /** Net Pnl Usdt */
+            net_pnl_usdt?: number | null;
         };
         /** AccountTradesRead */
         AccountTradesRead: {
@@ -1604,6 +2294,34 @@ export interface components {
              */
             live_paper_running: boolean;
         };
+        /**
+         * AgentFreshnessRead
+         * @description Current data-freshness snapshot for one (profile, agent) (W8 — T3.3).
+         */
+        AgentFreshnessRead: {
+            /** Profile Id */
+            profile_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Agent Key */
+            agent_key: string;
+            /** Last Data At */
+            last_data_at: string | null;
+            /** Age Minutes */
+            age_minutes: number | null;
+            /** Is Fresh */
+            is_fresh: boolean;
+            /**
+             * Checked At
+             * Format: date-time
+             */
+            checked_at: string;
+        };
+        /** AgentFreshnessResponse */
+        AgentFreshnessResponse: {
+            /** Statuses */
+            statuses?: components["schemas"]["AgentFreshnessRead"][];
+        };
         /** AiForecastBacktestFile */
         AiForecastBacktestFile: {
             /** File Name */
@@ -1615,6 +2333,102 @@ export interface components {
         AiForecastBacktestFilesResponse: {
             /** Files */
             files: components["schemas"]["AiForecastBacktestFile"][];
+        };
+        /**
+         * AiOverlayConfig
+         * @description Per-user overlay configuration stored as JSON on AutoTradeConfig.
+         *
+         *     All flags default to ``False`` so existing users see no behaviour
+         *     change until they explicitly opt in. ``stale_max_minutes`` matches the
+         *     plan-mandated 4-hour freshness ceiling for ai_trend.
+         */
+        AiOverlayConfig: {
+            /**
+             * Enabled
+             * @description Global overlay kill-switch.
+             * @default false
+             */
+            enabled: boolean;
+            /**
+             * Entry Side Lock Enabled
+             * @description Block entries whose side contradicts ai_trend direction (phase 1).
+             * @default false
+             */
+            entry_side_lock_enabled: boolean;
+            /**
+             * Atr Scaling Enabled
+             * @description Scale the SL ATR multiplier by ai_trend.strength (phase 2).
+             * @default false
+             */
+            atr_scaling_enabled: boolean;
+            /**
+             * Rsi Scaling Enabled
+             * @description Shift RSI watcher thresholds by ai_trend direction (phase 3).
+             * @default false
+             */
+            rsi_scaling_enabled: boolean;
+            /**
+             * Stale Max Minutes
+             * @description Maximum age of the ai_trend record (minutes). Older records trigger fail-open fallback.
+             * @default 240
+             */
+            stale_max_minutes: number;
+            /**
+             * Min Strength
+             * @description Minimum ai_trend.strength below which the overlay treats the signal as no-op.
+             * @default 0.4
+             */
+            min_strength: number;
+            /**
+             * Atr Scale Range
+             * @description (min, max) multiplier applied to the base ATR multiplier. Bounds the runtime override.
+             * @default [
+             *       0.8,
+             *       1.2
+             *     ]
+             */
+            atr_scale_range: [
+                number,
+                number
+            ];
+            /**
+             * Rsi Max Shift
+             * @description Maximum absolute shift (in points) applied to RSI thresholds by the overlay.
+             * @default 5
+             */
+            rsi_max_shift: number;
+        };
+        /**
+         * AiOverlayConfigResponse
+         * @description API response wrapper.
+         */
+        AiOverlayConfigResponse: {
+            config: components["schemas"]["AiOverlayConfig"];
+        };
+        /**
+         * AiOverlayConfigUpdateRequest
+         * @description API request — partial update; missing fields keep their current value.
+         */
+        AiOverlayConfigUpdateRequest: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Entry Side Lock Enabled */
+            entry_side_lock_enabled?: boolean | null;
+            /** Atr Scaling Enabled */
+            atr_scaling_enabled?: boolean | null;
+            /** Rsi Scaling Enabled */
+            rsi_scaling_enabled?: boolean | null;
+            /** Stale Max Minutes */
+            stale_max_minutes?: number | null;
+            /** Min Strength */
+            min_strength?: number | null;
+            /** Atr Scale Range */
+            atr_scale_range?: [
+                number,
+                number
+            ] | null;
+            /** Rsi Max Shift */
+            rsi_max_shift?: number | null;
         };
         /** AtrObSignalRequest */
         AtrObSignalRequest: {
@@ -1856,6 +2670,72 @@ export interface components {
             user: components["schemas"]["UserRead"];
             token: components["schemas"]["TokenResponse"];
         };
+        /**
+         * AutoTradeCloseOpenPositionsRequest
+         * @description Request body for the manual ``/auto-trade/close-positions`` flatten flow.
+         *
+         *     The flow is intentionally two-step:
+         *
+         *       1. Client sends ``confirm: false`` (or omits it). The server returns
+         *          HTTP 412 with a preview of what would be closed — list of positions,
+         *          their sides/quantities, and how many conditional orders would be
+         *          cancelled. Nothing changes on the exchange or in the DB.
+         *       2. Client reviews the preview, then re-sends with ``confirm: true``.
+         *          The server proceeds to cancel TP/SL conditional orders and market-
+         *          close every open ``AutoTradePosition`` for the resolved scope.
+         *
+         *     Auto-trade ``is_running`` is **not** flipped automatically. Stop and close
+         *     are independent operations — the user explicitly asked for them to be
+         *     decoupled. Pending signals in the queue are also untouched.
+         */
+        AutoTradeCloseOpenPositionsRequest: {
+            /**
+             * Account Id
+             * @description Optional account scope. Required only if the user owns more than one auto-trade config. Otherwise the unique config is resolved from ``user_id`` alone.
+             */
+            account_id?: number | null;
+            /**
+             * Confirm
+             * @description Must be true to actually close the positions. Without it the server returns 412 + a preview and changes nothing.
+             * @default false
+             */
+            confirm: boolean;
+            /**
+             * Reason
+             * @description Optional free-text reason recorded in the audit event.
+             */
+            reason?: string | null;
+        };
+        /** AutoTradeCloseOpenPositionsResponse */
+        AutoTradeCloseOpenPositionsResponse: {
+            /** Closed */
+            closed?: components["schemas"]["AutoTradeClosedPositionInfo"][];
+            /** Failed */
+            failed?: components["schemas"]["AutoTradeFailedClosePositionInfo"][];
+            /** Skipped Already Closed */
+            skipped_already_closed?: number[];
+        };
+        /**
+         * AutoTradeClosedPositionInfo
+         * @description Per-position outcome row in the success response.
+         */
+        AutoTradeClosedPositionInfo: {
+            /** Position Id */
+            position_id: number;
+            /** Symbol */
+            symbol: string;
+            /**
+             * Side
+             * @enum {string}
+             */
+            side: "LONG" | "SHORT";
+            /** Executed Qty */
+            executed_qty: number;
+            /** Avg Price */
+            avg_price: number | null;
+            /** Cancelled Conditional Orders */
+            cancelled_conditional_orders?: string[];
+        };
         /** AutoTradeConfigRead */
         AutoTradeConfigRead: {
             /** Id */
@@ -1887,6 +2767,17 @@ export interface components {
             /** Tp Pct */
             tp_pct: number;
             strategy_profile?: components["schemas"]["StrategyProfileConfig"] | null;
+            /** Strategy Name */
+            strategy_name?: string | null;
+            /** Attached Forecast Id */
+            attached_forecast_id?: string | null;
+            risk?: components["schemas"]["AutoTradeRiskConfig"] | null;
+            /**
+             * Lifecycle Stage
+             * @default live
+             * @enum {string}
+             */
+            lifecycle_stage: "research" | "sandbox" | "validation" | "live" | "rejected" | "archived";
             /** Last Started At */
             last_started_at: string | null;
             /** Last Stopped At */
@@ -1945,6 +2836,11 @@ export interface components {
             /** Tp Pct */
             tp_pct: number;
             strategy_profile?: components["schemas"]["StrategyProfileConfig"] | null;
+            /** Strategy Name */
+            strategy_name?: string | null;
+            /** Attached Forecast Id */
+            attached_forecast_id?: string | null;
+            risk?: components["schemas"]["AutoTradeRiskConfig"] | null;
         };
         /** AutoTradeConfigsResponse */
         AutoTradeConfigsResponse: {
@@ -1993,6 +2889,15 @@ export interface components {
         AutoTradeEventsResponse: {
             /** Events */
             events?: components["schemas"]["AutoTradeEventRead"][];
+        };
+        /** AutoTradeFailedClosePositionInfo */
+        AutoTradeFailedClosePositionInfo: {
+            /** Position Id */
+            position_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Error */
+            error: string;
         };
         /** AutoTradeLedgerTradeRead */
         AutoTradeLedgerTradeRead: {
@@ -2108,6 +3013,14 @@ export interface components {
             unrealized_pnl_usdt?: number | null;
             /** Total Pnl Usdt */
             total_pnl_usdt?: number | null;
+            /** Gross Realized Usdt */
+            gross_realized_usdt?: number | null;
+            /** Commission Usdt */
+            commission_usdt?: number | null;
+            /** Funding Usdt */
+            funding_usdt?: number | null;
+            /** Net Pnl Usdt */
+            net_pnl_usdt?: number | null;
             /** Pnl Pct */
             pnl_pct?: number | null;
             /** Roe Pct */
@@ -2182,6 +3095,8 @@ export interface components {
             open_history_id: number | null;
             /** Close History Id */
             close_history_id: number | null;
+            /** Decision Event Id */
+            decision_event_id?: string | null;
             /** Raw Open Order */
             raw_open_order: {
                 [key: string]: unknown;
@@ -2234,6 +3149,86 @@ export interface components {
             total_pnl_usdt: number;
             /** Total Trade Pnl Usdt */
             total_trade_pnl_usdt: number;
+        };
+        /**
+         * AutoTradeRiskConfig
+         * @description Pre-Trade Risk Engine limits for a strategy (W8).
+         *
+         *     Every limit is optional; ``None`` means "rule off". The model is used both
+         *     as nested input on the config upsert and (with ``from_attributes``) as the
+         *     serialized form of the :class:`app.models.auto_trade_risk_config.AutoTradeRiskConfig` row on read. Bounds here mirror the table-level
+         *     CheckConstraints so a bad value is rejected at the API edge with a clear
+         *     422 rather than surfacing as a database error.
+         */
+        AutoTradeRiskConfig: {
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /** Daily Loss Limit Usdt */
+            daily_loss_limit_usdt?: number | null;
+            /** Daily Loss Limit Pct */
+            daily_loss_limit_pct?: number | null;
+            /** Max Open Positions */
+            max_open_positions?: number | null;
+            /** Max Open Positions Per Symbol */
+            max_open_positions_per_symbol?: number | null;
+            /** Exposure Cap Usdt */
+            exposure_cap_usdt?: number | null;
+            /** Leverage Ceiling */
+            leverage_ceiling?: number | null;
+            /**
+             * Conflicting Signal Policy
+             * @default off
+             * @enum {string}
+             */
+            conflicting_signal_policy: "off" | "block_opposite";
+            /**
+             * Kpi Guard Enabled
+             * @default false
+             */
+            kpi_guard_enabled: boolean;
+            /** Kpi Guard Max Dd Pct */
+            kpi_guard_max_dd_pct?: number | null;
+            /** Kpi Guard Max Daily Loss Usdt */
+            kpi_guard_max_daily_loss_usdt?: number | null;
+            /** Kpi Guard Max Daily Loss Pct */
+            kpi_guard_max_daily_loss_pct?: number | null;
+            /** Kpi Guard Min Win Rate Pct */
+            kpi_guard_min_win_rate_pct?: number | null;
+            /** Kpi Guard Min Trades */
+            kpi_guard_min_trades?: number | null;
+            /**
+             * Kill Switch Enabled
+             * @default false
+             */
+            kill_switch_enabled: boolean;
+            /** Kill Switch Atr Spike Mult */
+            kill_switch_atr_spike_mult?: number | null;
+            /** Kill Switch Atr Period */
+            kill_switch_atr_period?: number | null;
+            /** Kill Switch Price Move Pct */
+            kill_switch_price_move_pct?: number | null;
+            /** Kill Switch Cooldown Seconds */
+            kill_switch_cooldown_seconds?: number | null;
+            /**
+             * Anomaly Detection Enabled
+             * @default false
+             */
+            anomaly_detection_enabled: boolean;
+            /** Anomaly Z Threshold */
+            anomaly_z_threshold?: number | null;
+            /** Anomaly Window */
+            anomaly_window?: number | null;
+            /** Promote Min Win Rate Pct */
+            promote_min_win_rate_pct?: number | null;
+            /** Promote Max Dd Pct */
+            promote_max_dd_pct?: number | null;
+            /** Promote Min Trades */
+            promote_min_trades?: number | null;
+            /** Promote Min Sandbox Days */
+            promote_min_sandbox_days?: number | null;
         };
         /** AutoTradeStateResponse */
         AutoTradeStateResponse: {
@@ -2366,6 +3361,40 @@ export interface components {
             signal: components["schemas"]["BuilderSignalRequest"];
             execution?: components["schemas"]["SignalExecuteRequest"];
         };
+        /** BulkLifecycleResponse */
+        BulkLifecycleResponse: {
+            /** Requested */
+            requested: number;
+            /** Succeeded */
+            succeeded: number;
+            /** Skipped */
+            skipped: number;
+            /** Failed */
+            failed: number;
+            /** Results */
+            results?: components["schemas"]["BulkLifecycleResultItem"][];
+        };
+        /**
+         * BulkLifecycleResultItem
+         * @description Per-config outcome row in ``BulkLifecycleResponse``.
+         */
+        BulkLifecycleResultItem: {
+            /** Config Id */
+            config_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Strategy Name */
+            strategy_name?: string | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "ok" | "skipped" | "failed";
+            /** Reason */
+            reason?: string | null;
+            /** Error */
+            error?: string | null;
+        };
         /** CandleInput */
         CandleInput: {
             /** Time */
@@ -2380,6 +3409,47 @@ export interface components {
             close: number;
             /** Volume */
             volume: number;
+        };
+        /** Email2FACodeSentResponse */
+        Email2FACodeSentResponse: {
+            /** Sent */
+            sent: boolean;
+        };
+        /** Email2FAConfirmRequest */
+        Email2FAConfirmRequest: {
+            /** Code */
+            code: string;
+        };
+        /** Email2FAStatusResponse */
+        Email2FAStatusResponse: {
+            /** Enabled */
+            enabled: boolean;
+            /** Available */
+            available: boolean;
+        };
+        /** EmailConfirmRequest */
+        EmailConfirmRequest: {
+            /** Action */
+            action: string;
+        };
+        /** EmailConfirmStatusResponse */
+        EmailConfirmStatusResponse: {
+            /** Sent */
+            sent: boolean;
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** EmailConfirmVerifyRequest */
+        EmailConfirmVerifyRequest: {
+            /** Action */
+            action: string;
+            /** Code */
+            code: string;
+        };
+        /** EmailConfirmVerifyResponse */
+        EmailConfirmVerifyResponse: {
+            /** Confirmed */
+            confirmed: boolean;
         };
         /** ExchangeAccountCreate */
         ExchangeAccountCreate: {
@@ -2454,24 +3524,6 @@ export interface components {
             supported_modes: string[];
             /** Default Mode */
             default_mode: string;
-        };
-        /** ExchangeSecretIn */
-        ExchangeSecretIn: {
-            /** Api Key */
-            api_key: string;
-            /** Api Secret */
-            api_secret: string;
-            /** Passphrase */
-            passphrase?: string | null;
-        };
-        /** ExchangeSecretOut */
-        ExchangeSecretOut: {
-            /** Encrypted Api Key */
-            encrypted_api_key: string;
-            /** Encrypted Api Secret */
-            encrypted_api_secret: string;
-            /** Encrypted Passphrase */
-            encrypted_passphrase?: string | null;
         };
         /** GridBotCatalog */
         GridBotCatalog: {
@@ -3380,6 +4432,24 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /** PortfolioSummaryResponse */
+        PortfolioSummaryResponse: {
+            /** Strategies */
+            strategies?: components["schemas"]["StrategyPortfolioEntryRead"][];
+            /** Total Realized Pnl Usdt */
+            total_realized_pnl_usdt: number;
+            /** Total Unrealized Pnl Usdt */
+            total_unrealized_pnl_usdt: number;
+            /** Total Open Positions */
+            total_open_positions: number;
+            /** Total Running Strategies */
+            total_running_strategies: number;
+            /**
+             * Portfolio Max Dd Pct
+             * @default 0
+             */
+            portfolio_max_dd_pct: number;
+        };
         /** PortfolioUserStrategyInput */
         PortfolioUserStrategyInput: {
             /** Strategy Id */
@@ -3389,6 +4459,81 @@ export interface components {
              * @default 0
              */
             allocation_pct: number;
+        };
+        /**
+         * PositionTraceRead
+         * @description Post-Trade execution trace for one position (W9 — T3.1).
+         *
+         *     The signal→close timeline: position metadata + linkage pointers (the AI
+         *     ``decision_event_id`` points at core's ``ai_decision_events`` and is surfaced,
+         *     not dereferenced) + the chronological ``AutoTradeEvent`` list.
+         */
+        PositionTraceRead: {
+            /** Position Id */
+            position_id: number;
+            /** Symbol */
+            symbol: string;
+            /** Side */
+            side: string;
+            /** Status */
+            status: string;
+            /** Entry Price */
+            entry_price: number;
+            /** Close Price */
+            close_price: number | null;
+            /** Close Reason */
+            close_reason: string | null;
+            /** State */
+            state: string;
+            /** Decision Event Id */
+            decision_event_id: string | null;
+            /** Open History Id */
+            open_history_id: number | null;
+            /** Close History Id */
+            close_history_id: number | null;
+            /** Open Order Id */
+            open_order_id: string | null;
+            /** Close Order Id */
+            close_order_id: string | null;
+            /**
+             * Opened At
+             * Format: date-time
+             */
+            opened_at: string;
+            /** Closed At */
+            closed_at: string | null;
+            /** Events */
+            events?: components["schemas"]["AutoTradeEventRead"][];
+        };
+        /**
+         * PromotionGateCriterionRead
+         * @description One promotion-gate criterion with its actual value vs threshold (B5).
+         */
+        PromotionGateCriterionRead: {
+            /** Name */
+            name: string;
+            /** Actual */
+            actual: number;
+            /** Threshold */
+            threshold: number;
+            /** Passed */
+            passed: boolean;
+        };
+        /**
+         * PromotionStatusRead
+         * @description Current lifecycle stage + KPI-Gate readiness for a strategy (B5 — W10).
+         */
+        PromotionStatusRead: {
+            /** Config Id */
+            config_id: number;
+            /** Lifecycle Stage */
+            lifecycle_stage: string;
+            /** Sandbox Days */
+            sandbox_days: number;
+            /** Can Promote */
+            can_promote: boolean;
+            /** Criteria */
+            criteria: components["schemas"]["PromotionGateCriterionRead"][];
         };
         /** RefreshTokenRequest */
         RefreshTokenRequest: {
@@ -3436,6 +4581,24 @@ export interface components {
              */
             fee_pct: number;
         };
+        /** StepUpRequest */
+        StepUpRequest: {
+            /**
+             * Method
+             * @default totp
+             * @enum {string}
+             */
+            method: "totp" | "email";
+            /** Code */
+            code: string;
+        };
+        /** StepUpResponse */
+        StepUpResponse: {
+            /** Step Up Token */
+            step_up_token: string;
+            /** Expires In */
+            expires_in: number;
+        };
         /** StrategyCreate */
         StrategyCreate: {
             /** Name */
@@ -3462,6 +4625,45 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        /**
+         * StrategyHealthRead
+         * @description On-read composite health for one strategy (W8 — T2.1).
+         */
+        StrategyHealthRead: {
+            /** Config Id */
+            config_id: number;
+            /** Window Days */
+            window_days: number;
+            /** Sample Size */
+            sample_size: number;
+            /** Win Rate Pct */
+            win_rate_pct: number;
+            /**
+             * Max Dd Pct
+             * @description Max drawdown as a % of the per-trade notional base (position_size_usdt), NOT account equity — a W9 proxy pending real-balance calibration. UI: label accordingly; do not present as account drawdown.
+             */
+            max_dd_pct: number;
+            /** Total Pnl Usdt */
+            total_pnl_usdt: number;
+            /**
+             * Roi Pct
+             * @description Realized PnL as a % of the per-trade notional base (position_size_usdt), NOT account equity — a W9 proxy (can read high). Calibrate the base to the sub-account balance before relying on it; UI must label the denominator.
+             */
+            roi_pct: number;
+            /** Sharpe Proxy */
+            sharpe_proxy: number;
+            /** Stability Score */
+            stability_score: number;
+            /** Health Score */
+            health_score: number;
+            /** Health Class */
+            health_class: string;
+            /**
+             * Computed At
+             * Format: date-time
+             */
+            computed_at: string;
+        };
         /** StrategyMetaResponse */
         StrategyMetaResponse: {
             /** Supported Strategy Types */
@@ -3482,6 +4684,81 @@ export interface components {
             version_min_length: number;
             /** Version Max Length */
             version_max_length: number;
+        };
+        /**
+         * StrategyPortfolioEntryRead
+         * @description One strategy slot in the aggregated portfolio view.
+         *
+         *     Each entry corresponds to a single :class:`AutoTradeConfig` row, which by
+         *     W7 design owns its own exchange sub-account (credential). Balance values
+         *     are pulled live from the exchange; ``balance_error`` is populated when
+         *     that sub-account's adapter call failed so the dashboard can show a
+         *     degraded state instead of failing the whole portfolio fetch.
+         */
+        StrategyPortfolioEntryRead: {
+            /** Config Id */
+            config_id: number;
+            /** Account Id */
+            account_id: number;
+            /** Account Label */
+            account_label: string;
+            /** Exchange Name */
+            exchange_name: string;
+            /** Mode */
+            mode: string;
+            /** Lifecycle Stage */
+            lifecycle_stage: string;
+            /** Strategy Name */
+            strategy_name: string | null;
+            /** Profile Id */
+            profile_id: number;
+            /** Profile Symbol */
+            profile_symbol: string | null;
+            /** Is Running */
+            is_running: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Open Positions Count */
+            open_positions_count: number;
+            /** Margin Used Usdt */
+            margin_used_usdt: number;
+            /** Realized Pnl Usdt */
+            realized_pnl_usdt: number;
+            /** Unrealized Pnl Usdt */
+            unrealized_pnl_usdt: number;
+            /** Balance Total Usdt */
+            balance_total_usdt: number | null;
+            /** Balance Free Usdt */
+            balance_free_usdt: number | null;
+            /** Last Started At */
+            last_started_at: string | null;
+            /** Last Stopped At */
+            last_stopped_at: string | null;
+            /** Balance Error */
+            balance_error: string | null;
+            /** Win Rate Pct */
+            win_rate_pct: number | null;
+            /**
+             * Max Dd Pct
+             * @description Max drawdown as a % of the per-trade notional base, NOT account equity (W9 proxy). UI must label the denominator; calibration pending.
+             */
+            max_dd_pct: number | null;
+            /** Sharpe Proxy */
+            sharpe_proxy: number | null;
+            /**
+             * Roi Pct
+             * @description Realized PnL as a % of the per-trade notional base, NOT account equity (W9 proxy — can read high). UI must label the denominator; calibration pending.
+             */
+            roi_pct: number | null;
+            /** Health Class */
+            health_class: string | null;
+            /** Sample Size */
+            sample_size: number | null;
+            /**
+             * Kpi As Of
+             * @description When the surfaced KPIs were computed: the snapshot's computed_at when read from the cron-written snapshot, or the live recompute time when the snapshot was missing/stale for a running strategy. Null when no KPIs.
+             */
+            kpi_as_of?: string | null;
         };
         /** StrategyProfileConfig */
         StrategyProfileConfig: {
@@ -3632,6 +4909,48 @@ export interface components {
                 [key: string]: unknown;
             } | null;
         };
+        /** TelegramLinkOut */
+        TelegramLinkOut: {
+            /** Code */
+            code: string;
+            /** Deep Link */
+            deep_link?: string | null;
+            /** Expires At */
+            expires_at?: string | null;
+        };
+        /** TelegramSettingsOut */
+        TelegramSettingsOut: {
+            /** Linked */
+            linked: boolean;
+            /** Enabled */
+            enabled: boolean;
+            /** Notify On Open */
+            notify_on_open: boolean;
+            /** Notify On Close */
+            notify_on_close: boolean;
+            /** Notify On Risk */
+            notify_on_risk: boolean;
+            /** Linked At */
+            linked_at?: string | null;
+        };
+        /** TelegramSettingsUpdate */
+        TelegramSettingsUpdate: {
+            /** Enabled */
+            enabled?: boolean | null;
+            /** Notify On Open */
+            notify_on_open?: boolean | null;
+            /** Notify On Close */
+            notify_on_close?: boolean | null;
+            /** Notify On Risk */
+            notify_on_risk?: boolean | null;
+        };
+        /** TelegramTestResult */
+        TelegramTestResult: {
+            /** Status */
+            status: string;
+            /** Error */
+            error?: string | null;
+        };
         /** TokenResponse */
         TokenResponse: {
             /** Access Token */
@@ -3647,6 +4966,58 @@ export interface components {
             expires_in: number;
             /** Refresh Expires In */
             refresh_expires_in: number;
+        };
+        /** TotpEnrollResponse */
+        TotpEnrollResponse: {
+            /** Provisioning Uri */
+            provisioning_uri: string;
+            /** Secret */
+            secret: string;
+            /** Recovery Codes */
+            recovery_codes: string[];
+        };
+        /** TotpStatusResponse */
+        TotpStatusResponse: {
+            /** Enabled */
+            enabled: boolean;
+        };
+        /** TotpVerifyRequest */
+        TotpVerifyRequest: {
+            /** Code */
+            code: string;
+        };
+        /** TwoFactorLoginEmailRequest */
+        TwoFactorLoginEmailRequest: {
+            /** Challenge Token */
+            challenge_token: string;
+        };
+        /** TwoFactorLoginRequest */
+        TwoFactorLoginRequest: {
+            /** Challenge Token */
+            challenge_token: string;
+            /**
+             * Method
+             * @default totp
+             * @enum {string}
+             */
+            method: "totp" | "email";
+            /** Code */
+            code: string;
+        };
+        /** TwoFactorRequiredResponse */
+        TwoFactorRequiredResponse: {
+            /**
+             * Two Factor Required
+             * @default true
+             * @constant
+             */
+            two_factor_required: true;
+            /** Challenge Token */
+            challenge_token: string;
+            /** Expires In */
+            expires_in: number;
+            /** Factors */
+            factors?: string[];
         };
         /** UserRead */
         UserRead: {
@@ -3904,6 +5275,37 @@ export interface operations {
             };
         };
     };
+    get_agent_freshness_api_v1_health_agents_get: {
+        parameters: {
+            query?: {
+                is_fresh?: boolean | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AgentFreshnessResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     sign_up_api_v1_auth_signup_post: {
         parameters: {
             query?: never;
@@ -3947,6 +5349,72 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["SignInRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TokenResponse"] | components["schemas"]["TwoFactorRequiredResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_login_email_code_api_v1_auth_2fa_login_email_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorLoginEmailRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FACodeSentResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_2fa_api_v1_auth_2fa_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TwoFactorLoginRequest"];
             };
         };
         responses: {
@@ -4023,6 +5491,333 @@ export interface operations {
             };
         };
     };
+    enroll_2fa_api_v1_auth_2fa_enroll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpEnrollResponse"];
+                };
+            };
+        };
+    };
+    verify_2fa_api_v1_auth_2fa_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TotpVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_2fa_api_v1_auth_2fa_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpStatusResponse"];
+                };
+            };
+        };
+    };
+    request_step_up_email_code_api_v1_auth_2fa_step_up_email_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FACodeSentResponse"];
+                };
+            };
+        };
+    };
+    step_up_2fa_api_v1_auth_2fa_step_up_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["StepUpRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StepUpResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    disable_2fa_api_v1_auth_2fa_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TotpStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    enroll_email_2fa_api_v1_auth_2fa_email_enroll_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FACodeSentResponse"];
+                };
+            };
+        };
+    };
+    confirm_email_2fa_api_v1_auth_2fa_email_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["Email2FAConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FAStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    status_email_2fa_api_v1_auth_2fa_email_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FAStatusResponse"];
+                };
+            };
+        };
+    };
+    disable_email_2fa_api_v1_auth_2fa_email_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Email2FAStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    request_email_confirmation_api_v1_auth_email_confirm_request_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailConfirmRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailConfirmStatusResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_email_confirmation_api_v1_auth_email_confirm_verify_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EmailConfirmVerifyRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EmailConfirmVerifyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_ai_forecast_files_internal_api_v1_internal_backtest_ai_forecast_files_get: {
         parameters: {
             query?: never;
@@ -4076,6 +5871,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["VwapAiComparisonResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    agent_outcomes_api_v1_internal_agent_outcomes_get: {
+        parameters: {
+            query?: {
+                since_days?: number;
+            };
+            header?: {
+                "X-Internal-API-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: {
+                            [key: string]: unknown;
+                        }[];
+                    };
                 };
             };
             /** @description Validation Error */
@@ -4532,39 +6364,6 @@ export interface operations {
             };
         };
     };
-    encrypt_exchange_secrets_api_v1_exchange_encrypt_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExchangeSecretIn"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExchangeSecretOut"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_exchange_accounts_meta_api_v1_exchange_accounts_meta_get: {
         parameters: {
             query?: never;
@@ -4608,7 +6407,9 @@ export interface operations {
     create_exchange_account_api_v1_exchange_accounts_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -4641,7 +6442,9 @@ export interface operations {
     delete_exchange_account_api_v1_exchange_accounts__account_id__delete: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path: {
                 account_id: number;
             };
@@ -4670,7 +6473,9 @@ export interface operations {
     update_exchange_account_api_v1_exchange_accounts__account_id__patch: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path: {
                 account_id: number;
             };
@@ -5135,6 +6940,7 @@ export interface operations {
         parameters: {
             query?: {
                 account_id?: number | null;
+                config_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5165,7 +6971,9 @@ export interface operations {
     upsert_auto_trade_config_api_v1_live_auto_trade_config_put: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5195,12 +7003,179 @@ export interface operations {
             };
         };
     };
+    get_strategy_promotion_status_api_v1_live_auto_trade_strategies__config_id__promotion_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PromotionStatusRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    promote_strategy_api_v1_live_auto_trade_strategies__config_id__promote_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    demote_strategy_api_v1_live_auto_trade_strategies__config_id__demote_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_get: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+                config_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiOverlayConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_put: {
+        parameters: {
+            query?: {
+                account_id?: number | null;
+                config_id?: number | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiOverlayConfigUpdateRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiOverlayConfigResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     play_auto_trade_api_v1_live_auto_trade_play_post: {
         parameters: {
             query?: {
                 account_id?: number | null;
             };
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path?: never;
             cookie?: never;
         };
@@ -5257,10 +7232,58 @@ export interface operations {
             };
         };
     };
+    close_auto_trade_positions_api_v1_live_auto_trade_close_positions_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoTradeCloseOpenPositionsRequest"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeCloseOpenPositionsResponse"];
+                };
+            };
+            /** @description Auto-trade config not found for the given scope. */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Confirmation required. Body contains an ``AutoTradeClosePreview`` payload. */
+            412: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auto_trade_state_api_v1_live_auto_trade_state_get: {
         parameters: {
             query?: {
                 account_id?: number | null;
+                config_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5288,12 +7311,77 @@ export interface operations {
             };
         };
     };
+    get_strategy_health_api_v1_live_auto_trade_strategies__config_id__health_get: {
+        parameters: {
+            query?: {
+                window_days?: number;
+            };
+            header?: never;
+            path: {
+                config_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["StrategyHealthRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_position_trace_api_v1_live_auto_trade_positions__position_id__trace_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                position_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PositionTraceRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_auto_trade_positions_api_v1_live_auto_trade_positions_get: {
         parameters: {
             query?: {
                 limit?: number;
                 status?: ("open" | "closed" | "error") | null;
                 account_id?: number | null;
+                config_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5328,6 +7416,7 @@ export interface operations {
                 symbol?: string | null;
                 origin?: ("platform" | "external" | "unknown") | null;
                 limit?: number;
+                config_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5360,6 +7449,7 @@ export interface operations {
             query?: {
                 limit?: number;
                 account_id?: number | null;
+                config_id?: number | null;
             };
             header?: never;
             path?: never;
@@ -5383,6 +7473,241 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_auto_trade_portfolio_api_v1_live_auto_trade_portfolio_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PortfolioSummaryResponse"];
+                };
+            };
+        };
+    };
+    play_all_auto_trade_api_v1_live_auto_trade_play_all_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkLifecycleResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    stop_all_auto_trade_api_v1_live_auto_trade_stop_all_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BulkLifecycleResponse"];
+                };
+            };
+        };
+    };
+    get_auto_trade_balance_api_v1_live_auto_trade_balance_get: {
+        parameters: {
+            query: {
+                account_id: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AccountBalanceResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_telegram_settings_api_v1_live_notifications_telegram_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramSettingsOut"];
+                };
+            };
+        };
+    };
+    update_telegram_settings_api_v1_live_notifications_telegram_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TelegramSettingsUpdate"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramSettingsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    unlink_telegram_api_v1_live_notifications_telegram_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramSettingsOut"];
+                };
+            };
+        };
+    };
+    link_telegram_api_v1_live_notifications_telegram_link_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramLinkOut"];
+                };
+            };
+        };
+    };
+    test_telegram_api_v1_live_notifications_telegram_test_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TelegramTestResult"];
+                };
+            };
+        };
+    };
+    stream_events_api_v1_events_stream_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
         };
@@ -5425,6 +7750,26 @@ export interface operations {
             };
         };
     };
+    get_ai_config_schema_api_v1_ai_backtests_ai_configs_schema_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     list_ai_configs_api_v1_ai_backtests_ai_configs_get: {
         parameters: {
             query?: never;
@@ -5445,7 +7790,47 @@ export interface operations {
             };
         };
     };
+    list_agents_api_v1_ai_backtests_agents_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
     list_agent_weights_api_v1_ai_backtests_agent_weights_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+        };
+    };
+    get_metrics_schema_api_v1_ai_backtests_ai_forecast_catalogue_metrics_schema_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -5711,7 +8096,9 @@ export interface operations {
     apply_agent_weight_suggestion_api_v1_ai_backtests_agent_weights_suggestions__ai_config_id__apply_post: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
             path: {
                 ai_config_id: string;
             };
@@ -5724,6 +8111,68 @@ export interface operations {
                 };
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_export_artifacts_api_v1_ai_backtests_artifacts_get: {
+        parameters: {
+            query?: {
+                prefix?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_export_artifact_api_v1_ai_backtests_artifacts__filename__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                filename: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

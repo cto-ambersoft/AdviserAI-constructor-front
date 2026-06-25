@@ -1,7 +1,6 @@
 "use client";
 
 import type { AccountTradeRead } from "@/lib/api";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Props = {
@@ -58,7 +57,6 @@ export function AutoTradeTradesTable({ trades, isLoading }: Props) {
         <thead className="sticky top-0 bg-muted">
           <tr>
             <th className="px-2 py-2 text-left">Time</th>
-            <th className="px-2 py-2 text-left">Type</th>
             <th className="px-2 py-2 text-left">Side</th>
             <th className="px-2 py-2 text-left">Price</th>
             <th className="px-2 py-2 text-left">Amount</th>
@@ -72,11 +70,6 @@ export function AutoTradeTradesTable({ trades, isLoading }: Props) {
               className="border-t border-border/60"
             >
               <td className="px-2 py-1.5">{formatDateTime(trade.timestamp)}</td>
-              <td className="px-2 py-1.5">
-                <Badge variant={trade.is_autotrade ? "default" : "outline"}>
-                  {trade.is_autotrade ? "auto" : "manual"}
-                </Badge>
-              </td>
               <td className={`px-2 py-1.5 ${sideTone(trade.side)}`}>{trade.side}</td>
               <td className="px-2 py-1.5">{formatNumber(trade.price, 3)}</td>
               <td className="px-2 py-1.5">{formatNumber(trade.amount, 5)}</td>

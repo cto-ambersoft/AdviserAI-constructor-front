@@ -4,17 +4,32 @@ import { create } from "zustand";
 import { clearAccessToken, setAccessToken } from "@/lib/auth/token-storage";
 import {
   getAdminRuntimeSnapshot,
+  isTwoFactorRequired,
   logoutSession,
   me,
   signin,
   signup,
+  twoFactorLogin,
   type ApiError,
   type SignInRequest,
   type SignUpRequest,
+  type TwoFactorLoginRequest,
+  type TwoFactorMethod,
   type UserRead,
 } from "@/lib/api";
 
 type AuthStatus = "idle" | "authenticated" | "anonymous";
+
+// Login outcome: either signed in, or a 2FA challenge the UI must complete. The
+// challenge advertises which factors the user can use so the form offers the right
+// path(s). — §1b / E5.
+export type LoginResult =
+  | { twoFactorRequired: false }
+  | {
+      twoFactorRequired: true;
+      challengeToken: string;
+      factors: TwoFactorMethod[];
+    };
 
 type AuthState = {
   user: UserRead | null;
@@ -24,7 +39,8 @@ type AuthState = {
   isAdminAccessLoading: boolean;
   setUser: (user: UserRead | null) => void;
   hydrate: () => Promise<void>;
-  login: (data: SignInRequest) => Promise<void>;
+  login: (data: SignInRequest) => Promise<LoginResult>;
+  completeTwoFactorLogin: (payload: TwoFactorLoginRequest) => Promise<void>;
   register: (data: SignUpRequest) => Promise<void>;
   logout: () => Promise<void>;
   resolveAdminAccess: () => Promise<boolean>;
@@ -80,8 +96,30 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
   login: async (data) => {
-    const tokenResponse = await signin(data);
-    setAccessToken(tokenResponse.access_token);
+    const response = await signin(data);
+    // 2FA-enabled user: surface the challenge; login finishes in the form via
+    // completeTwoFactorLogin. No tokens/cookies yet. — §1b.
+    if (isTwoFactorRequired(response)) {
+      return {
+        twoFactorRequired: true,
+        challengeToken: response.challenge_token,
+        factors: (response.factors ?? []) as TwoFactorMethod[],
+      };
+    }
+    setAccessToken(response.access_token);
+    const currentUser = await loadCurrentUser();
+    set(() => ({
+      user: currentUser,
+      status: "authenticated",
+      hasHydrated: true,
+      hasAdminAccess: null,
+    }));
+    void get().resolveAdminAccess();
+    return { twoFactorRequired: false };
+  },
+  completeTwoFactorLogin: async (payload) => {
+    const tokens = await twoFactorLogin(payload);
+    setAccessToken(tokens.access_token);
     const currentUser = await loadCurrentUser();
     set(() => ({
       user: currentUser,

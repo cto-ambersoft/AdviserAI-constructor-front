@@ -15,3 +15,12 @@ export type OverlayLine = {
   width?: number;
   data: Array<{ time: UTCTimestamp; value: number }>;
 };
+
+// A horizontal price line drawn across the chart (e.g. open-position TP / SL).
+export type PriceLineInput = {
+  id: string;
+  price: number;
+  color?: string;
+  title?: string;
+  style?: "solid" | "dashed" | "dotted";
+};

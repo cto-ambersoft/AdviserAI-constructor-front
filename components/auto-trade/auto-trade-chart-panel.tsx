@@ -5,13 +5,14 @@ import { MarketChart } from "@/components/trading/market-chart";
 import { INPUT_CLASS } from "@/components/trading/form-controls";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import type { CandlePoint } from "@/lib/trading/chart-types";
+import type { CandlePoint, PriceLineInput } from "@/lib/trading/chart-types";
 
 const CARD_CLASS = "border-border/90 bg-card/90 shadow-none";
 
 type Props = {
   candles: CandlePoint[];
   markers: SeriesMarker<Time>[];
+  priceLines: PriceLineInput[];
   symbol: string;
   timeframe: string;
   bars: number;
@@ -26,6 +27,7 @@ type Props = {
 export function AutoTradeChartPanel({
   candles,
   markers,
+  priceLines,
   symbol,
   timeframe,
   bars,
@@ -82,7 +84,12 @@ export function AutoTradeChartPanel({
             No OHLCV data for current scope.
           </div>
         ) : (
-          <MarketChart candles={candles} markers={markers} height={420} />
+          <MarketChart
+            candles={candles}
+            markers={markers}
+            priceLines={priceLines}
+            height={420}
+          />
         )}
         <p className="mt-2 text-xs text-muted-foreground">
           Symbol: {symbol || "-"} | Candles: {candles.length}

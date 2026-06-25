@@ -10,12 +10,14 @@ import {
   applyAgentWeightsSuggestion,
   buildArtifactDownloadPath,
   getAiConfigSchema,
+  getAiForecastBacktestFiles,
   getBacktestExperiment,
   getCatalogueMetricsSchema,
   listAgentAccuracy,
   listAgentWeights,
   listAiBacktestConfigs,
   listAiForecastCatalogue,
+  listBacktestExperiments,
   listExportArtifacts,
   listPublicAgents,
   rebuildAiForecastCatalogue,
@@ -25,15 +27,19 @@ import {
   type AiBacktestConfigRecord,
   type AiConfigField,
   type AiConfigSchemaResponse,
+  type AiForecastBacktestFile,
   type AiForecastCatalogueEntry,
   type ArtifactInfo,
   type BacktestExperimentRecord,
   type BacktestExperimentSourceJob,
-  type MetricDefinition,
   type MetricsSchemaResponse,
   type PublicAiAgent,
 } from "@/lib/api";
 import { notifyError, notifyInfo, notifySuccess } from "@/lib/notifications";
+import {
+  formatMetricValue,
+  pickMetricValue,
+} from "@/lib/ai-backtests/metric-format";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/auth-store";
 import {
@@ -77,45 +83,6 @@ function formatPercent(value: number | null | undefined) {
     return "-";
   }
   return `${percentNumber.format(value * 100)}%`;
-}
-
-function formatMetricValue(value: number, metric: MetricDefinition): string {
-  const precision = metric.precision ?? 2;
-  switch (metric.format) {
-    case "percent": {
-      // win_rate / annualizedReturnPct etc. arrive already as percent values.
-      return `${value.toFixed(precision)}%`;
-    }
-    case "money":
-      return `${value >= 0 ? "" : "-"}${Math.abs(value).toFixed(precision)}`;
-    case "integer":
-      return Math.round(value).toString();
-    case "ratio":
-    case "decimal":
-    default:
-      return value.toFixed(precision);
-  }
-}
-
-function pickMetricValue(
-  metrics: Record<string, unknown> | null | undefined,
-  metric: MetricDefinition,
-): number | null {
-  if (!metrics) return null;
-  const candidates: Array<unknown> = [
-    metrics[metric.key],
-    ...(metric.aliases ?? []).map((alias) => metrics[alias]),
-  ];
-  for (const candidate of candidates) {
-    if (typeof candidate === "number" && Number.isFinite(candidate)) {
-      return candidate;
-    }
-    if (typeof candidate === "string" && candidate.trim() !== "") {
-      const parsed = Number(candidate);
-      if (Number.isFinite(parsed)) return parsed;
-    }
-  }
-  return null;
 }
 
 function suggestionRows(suggestion: AgentWeightsSuggestion | null) {
@@ -345,6 +312,180 @@ function describeAgent(
   return lookup.get(code)?.label ?? code;
 }
 
+type BacktestRunStatus =
+  | "completed"
+  | "running"
+  | "failed"
+  | "pending"
+  | "archived";
+
+interface BacktestStatusInfo {
+  status: BacktestRunStatus;
+  completedCount: number;
+  failedCount: number;
+  runningCount: number;
+  lastRunAt: string | null;
+}
+
+function experimentTimestamp(experiment: BacktestExperimentRecord): number {
+  const raw = experiment.completedAt ?? experiment.startedAt ?? null;
+  if (typeof raw !== "string") {
+    return 0;
+  }
+  const parsed = new Date(raw).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+/**
+ * Build a quick-lookup set of numeric suffixes that have a forecast CSV on
+ * disk (e.g. ai_cfg_01.csv, ai_cfg_07.csv). Suffixes are stored
+ * zero-padded *and* unpadded so AI-CFG-01 ↔ ai_cfg_1.csv and ai_cfg_01.csv
+ * both match.
+ */
+function buildForecastFileSuffixSet(
+  files: AiForecastBacktestFile[],
+): Set<string> {
+  const set = new Set<string>();
+  for (const file of files) {
+    const name = (file.file_name ?? "").toLowerCase();
+    const match = name.match(/ai[_-]?cfg[_-]?(\d+)\b/);
+    if (!match) continue;
+    const digits = match[1];
+    set.add(digits);
+    set.add(String(Number(digits))); // strip leading zeros
+    set.add(digits.padStart(2, "0"));
+  }
+  return set;
+}
+
+function aiConfigNumericSuffix(configId: string): string | null {
+  const match = configId.match(/(\d+)\s*$/);
+  return match ? match[1] : null;
+}
+
+function buildBacktestStatusMap(
+  configs: AiBacktestConfigRecord[],
+  experiments: BacktestExperimentRecord[],
+  catalogueEntries: AiForecastCatalogueEntry[],
+  forecastFileSuffixes: Set<string>,
+): Map<string, BacktestStatusInfo> {
+  const byConfig = new Map<string, BacktestExperimentRecord[]>();
+  for (const experiment of experiments) {
+    const id = String(experiment.aiConfigId ?? "");
+    if (!id) continue;
+    const bucket = byConfig.get(id) ?? [];
+    bucket.push(experiment);
+    byConfig.set(id, bucket);
+  }
+
+  const catalogueIds = new Set(
+    catalogueEntries
+      .map((entry) => (entry.aiConfigId ? String(entry.aiConfigId) : null))
+      .filter((value): value is string => value !== null),
+  );
+
+  const result = new Map<string, BacktestStatusInfo>();
+  for (const config of configs) {
+    const id = String(config.aiConfigId ?? "");
+    if (!id) continue;
+    const own = byConfig.get(id) ?? [];
+    const completedCount = own.filter((e) => e.status === "completed").length;
+    const failedCount = own.filter((e) => e.status === "failed").length;
+    const runningCount = own.filter(
+      (e) => e.status === "running" || e.status === "pending",
+    ).length;
+    const lastRunAt =
+      own.length > 0
+        ? new Date(
+            Math.max(...own.map(experimentTimestamp)),
+          ).toISOString()
+        : null;
+
+    const suffix = aiConfigNumericSuffix(id);
+    const hasForecastFile =
+      suffix !== null &&
+      (forecastFileSuffixes.has(suffix) ||
+        forecastFileSuffixes.has(String(Number(suffix))) ||
+        forecastFileSuffixes.has(suffix.padStart(2, "0")));
+
+    let status: BacktestRunStatus;
+    if (config.status === "arch") {
+      status = "archived";
+    } else if (runningCount > 0) {
+      status = "running";
+    } else if (
+      completedCount > 0 ||
+      catalogueIds.has(id) ||
+      hasForecastFile
+    ) {
+      status = "completed";
+    } else if (failedCount > 0) {
+      status = "failed";
+    } else {
+      status = "pending";
+    }
+
+    result.set(id, {
+      status,
+      completedCount,
+      failedCount,
+      runningCount,
+      lastRunAt,
+    });
+  }
+  return result;
+}
+
+const BACKTEST_STATUS_TONE: Record<BacktestRunStatus, keyof typeof TONE_CLASSES> = {
+  completed: "success",
+  running: "warning",
+  failed: "danger",
+  pending: "neutral",
+  archived: "danger",
+};
+
+const BACKTEST_STATUS_LABEL: Record<BacktestRunStatus, string> = {
+  completed: "Completed",
+  running: "Running",
+  failed: "Failed",
+  pending: "Pending",
+  archived: "Archived",
+};
+
+function renderBacktestStatus(info: BacktestStatusInfo | undefined) {
+  const status = info?.status ?? "pending";
+  const tone = BACKTEST_STATUS_TONE[status];
+  const label = BACKTEST_STATUS_LABEL[status];
+  const tooltipParts: string[] = [];
+  if (info) {
+    if (info.completedCount > 0) {
+      tooltipParts.push(`${info.completedCount} completed`);
+    }
+    if (info.runningCount > 0) {
+      tooltipParts.push(`${info.runningCount} running`);
+    }
+    if (info.failedCount > 0) {
+      tooltipParts.push(`${info.failedCount} failed`);
+    }
+    if (info.lastRunAt) {
+      tooltipParts.push(`last run ${formatTimestamp(info.lastRunAt)}`);
+    }
+  }
+  const tooltip = tooltipParts.length > 0 ? tooltipParts.join(" · ") : undefined;
+  return (
+    <Badge
+      variant="outline"
+      className={cn(
+        tonedBadgeClass(tone),
+        status === "running" && "animate-pulse",
+      )}
+      title={tooltip}
+    >
+      {label}
+    </Badge>
+  );
+}
+
 export function AdminAiBacktestConfigDashboard() {
   const router = useRouter();
   const redirectedRef = useRef(false);
@@ -368,6 +509,12 @@ export function AdminAiBacktestConfigDashboard() {
     AiForecastCatalogueEntry[]
   >([]);
   const [accuracyMetrics, setAccuracyMetrics] = useState<AgentAccuracyMetric[]>(
+    [],
+  );
+  const [experiments, setExperiments] = useState<BacktestExperimentRecord[]>(
+    [],
+  );
+  const [forecastFiles, setForecastFiles] = useState<AiForecastBacktestFile[]>(
     [],
   );
   const [latestSuggestion, setLatestSuggestion] =
@@ -429,6 +576,22 @@ export function AdminAiBacktestConfigDashboard() {
   );
   const agentLookup = useMemo(() => buildAgentLookup(agents), [agents]);
 
+  const forecastFileSuffixes = useMemo(
+    () => buildForecastFileSuffixSet(forecastFiles),
+    [forecastFiles],
+  );
+
+  const backtestStatusByConfig = useMemo(
+    () =>
+      buildBacktestStatusMap(
+        sortedConfigs,
+        experiments,
+        catalogueEntries,
+        forecastFileSuffixes,
+      ),
+    [sortedConfigs, experiments, catalogueEntries, forecastFileSuffixes],
+  );
+
   const canAccessAdmin = user?.is_admin === true || hasAdminAccess === true;
   const shouldResolveAdminAccess =
     hasHydrated &&
@@ -451,6 +614,8 @@ export function AdminAiBacktestConfigDashboard() {
         schemaData,
         metricsSchemaData,
         agentsData,
+        experimentsData,
+        filesData,
       ] = await Promise.all([
         listAiBacktestConfigs({ limit: 200 }).catch(() => ({ configs: [] })),
         listAgentWeights({ limit: 200 }).catch(() => ({ profiles: [] })),
@@ -459,6 +624,12 @@ export function AdminAiBacktestConfigDashboard() {
         getAiConfigSchema().catch(() => null),
         getCatalogueMetricsSchema().catch(() => null),
         listPublicAgents().catch(() => ({ agents: [] as PublicAiAgent[] })),
+        listBacktestExperiments({ limit: 200 }).catch(() => ({
+          experiments: [] as BacktestExperimentRecord[],
+        })),
+        getAiForecastBacktestFiles().catch(() => ({
+          files: [] as AiForecastBacktestFile[],
+        })),
       ]);
       setConfigs(configsData.configs ?? []);
       setWeightProfiles(weightsData.profiles ?? []);
@@ -467,6 +638,8 @@ export function AdminAiBacktestConfigDashboard() {
       setSchema(schemaData);
       setMetricsSchema(metricsSchemaData);
       setAgents(agentsData.agents ?? []);
+      setExperiments(experimentsData.experiments ?? []);
+      setForecastFiles(filesData.files ?? []);
     } catch (error) {
       notifyError(
         error instanceof Error
@@ -632,7 +805,11 @@ export function AdminAiBacktestConfigDashboard() {
     return null;
   }
 
-  const fields = schema?.fields ?? [];
+  // stackVersion is hidden from the matrix on the client side — it does not
+  // add operational signal when scanning the table.
+  const fields = (schema?.fields ?? []).filter(
+    (field) => field.key !== "stackVersion",
+  );
 
   return (
     <main className="mx-auto w-full max-w-[1600px] px-4 py-4 md:px-6 md:py-6">
@@ -644,8 +821,14 @@ export function AdminAiBacktestConfigDashboard() {
               is_admin only
             </Badge>
           </div>
-          <div>
+          <div className="flex items-center gap-2">
             <h1 className="text-xl font-semibold">AI Backtest Config</h1>
+            {isRemoteDataLoading ? (
+              <Loader2
+                className="size-4 animate-spin text-muted-foreground"
+                aria-label="Loading core data"
+              />
+            ) : null}
           </div>
         </div>
 
@@ -735,19 +918,6 @@ export function AdminAiBacktestConfigDashboard() {
       </section>
 
       <Card className="border-border/90 bg-card/90">
-        <CardHeader className="gap-2 border-b border-border/70">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <CardTitle className="text-sm font-medium">
-              AI Config Matrix ({totalConfigs} rows × {fields.length} columns)
-            </CardTitle>
-            {isRemoteDataLoading ? (
-              <Badge variant="outline" className="gap-1">
-                <Loader2 className="size-3 animate-spin" />
-                Loading core data
-              </Badge>
-            ) : null}
-          </div>
-        </CardHeader>
         <CardContent className="space-y-3 pt-4">
           {fields.length === 0 ? (
             <p className="text-sm text-muted-foreground">
@@ -763,6 +933,7 @@ export function AdminAiBacktestConfigDashboard() {
               configs={sortedConfigs}
               stickyLeftOffsets={stickyLeftOffsets}
               agentLookup={agentLookup}
+              backtestStatusByConfig={backtestStatusByConfig}
             />
           )}
         </CardContent>
@@ -897,11 +1068,13 @@ function ConfigMatrix({
   configs,
   stickyLeftOffsets,
   agentLookup,
+  backtestStatusByConfig,
 }: {
   fields: AiConfigField[];
   configs: AiBacktestConfigRecord[];
   stickyLeftOffsets: Record<string, number>;
   agentLookup: Map<string, PublicAiAgent>;
+  backtestStatusByConfig: Map<string, BacktestStatusInfo>;
 }) {
   return (
     <div className="overflow-auto rounded-md border border-border/70">
@@ -922,20 +1095,15 @@ function ConfigMatrix({
                     left: stickyLeft,
                   }}
                 >
-                  <div className="space-y-1">
-                    <p className="font-mono text-[11px] uppercase tracking-[0.05em] text-foreground">
-                      {field.key}
+                  <div className="space-y-0.5">
+                    <p className="text-xs font-medium text-foreground">
+                      {field.label}
                     </p>
-                    <div className="space-y-0.5">
-                      <p className="text-xs font-medium text-foreground">
-                        {field.label}
+                    {field.description ? (
+                      <p className="text-[11px] font-normal text-muted-foreground">
+                        {field.description}
                       </p>
-                      {field.description ? (
-                        <p className="text-[11px] font-normal text-muted-foreground">
-                          {field.description}
-                        </p>
-                      ) : null}
-                    </div>
+                    ) : null}
                   </div>
                 </th>
               );
@@ -946,8 +1114,9 @@ function ConfigMatrix({
           {configs.map((config, rowIndex) => {
             const rowTone =
               rowIndex % 2 === 0 ? "bg-background/70" : "bg-muted/20";
+            const configId = String(config.aiConfigId ?? "");
             return (
-              <tr key={String(config.aiConfigId ?? rowIndex)}>
+              <tr key={configId || rowIndex}>
                 {fields.map((field) => {
                   const stickyLeft = stickyLeftOffsets[field.key];
                   const value = (config as Record<string, unknown>)[field.key];
@@ -965,7 +1134,11 @@ function ConfigMatrix({
                         left: stickyLeft,
                       }}
                     >
-                      {field.key === "enabledAgents"
+                      {field.key === "status"
+                        ? renderBacktestStatus(
+                            backtestStatusByConfig.get(configId),
+                          )
+                        : field.key === "enabledAgents"
                         ? renderEnabledAgents(value, agentLookup)
                         : renderFieldValue(field, value)}
                     </td>

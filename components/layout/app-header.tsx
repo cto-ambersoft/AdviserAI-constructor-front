@@ -2,98 +2,20 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronDown, User } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
-import { useAuthStore } from "@/stores/auth-store";
 
-const BASE_NAV_LINKS = [
-  { href: "/strategy", label: "Strategy" },
-  // { href: "/trade", label: "Trade" },
-  { href: "/auto-trade", label: "Auto Trade" },
-  { href: "/settings/connect-exchange", label: "Connect Exchange" },
-];
-
-const ADMIN_NAV_LINKS = [
-  { href: "/admin/runtime", label: "Admin Runtime" },
-  { href: "/admin/ai-backtest-config", label: "AI Backtest Config" },
-];
+import { MobileNav } from "@/components/layout/mobile-nav";
+import { NavLink } from "@/components/layout/nav-link";
+import { ProfileMenu } from "@/components/layout/profile-menu";
+import { StatusIndicator } from "@/components/layout/status-indicator";
+import { PRIMARY_NAV } from "@/lib/navigation";
 
 export function AppHeader() {
-  const pathname = usePathname();
-  const router = useRouter();
-  const user = useAuthStore((state) => state.user);
-  const hasHydrated = useAuthStore((state) => state.hasHydrated);
-  const hasAdminAccess = useAuthStore((state) => state.hasAdminAccess);
-  const isAdminAccessLoading = useAuthStore((state) => state.isAdminAccessLoading);
-  const resolveAdminAccess = useAuthStore((state) => state.resolveAdminAccess);
-  const logout = useAuthStore((state) => state.logout);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement | null>(null);
-
-  useEffect(() => {
-    if (!isMenuOpen) {
-      return;
-    }
-
-    const onClickOutside = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) {
-        setIsMenuOpen(false);
-      }
-    };
-    const onEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        setIsMenuOpen(false);
-      }
-    };
-
-    window.addEventListener("mousedown", onClickOutside);
-    window.addEventListener("keydown", onEscape);
-    return () => {
-      window.removeEventListener("mousedown", onClickOutside);
-      window.removeEventListener("keydown", onEscape);
-    };
-  }, [isMenuOpen]);
-
-  const userInitials = useMemo(() => {
-    const email = user?.email?.trim() ?? "";
-    if (!email) {
-      return "U";
-    }
-    return email.slice(0, 1).toUpperCase();
-  }, [user?.email]);
-  const canOpenAdminPages = user?.is_admin === true || hasAdminAccess === true;
-  const navLinks = useMemo(
-    () =>
-      canOpenAdminPages
-        ? [...BASE_NAV_LINKS, ...ADMIN_NAV_LINKS]
-        : BASE_NAV_LINKS,
-    [canOpenAdminPages],
-  );
-
-  useEffect(() => {
-    if (!hasHydrated || !user) {
-      return;
-    }
-    if (user.is_admin === true || hasAdminAccess !== null || isAdminAccessLoading) {
-      return;
-    }
-    void resolveAdminAccess();
-  }, [
-    hasAdminAccess,
-    hasHydrated,
-    isAdminAccessLoading,
-    resolveAdminAccess,
-    user,
-  ]);
-
   return (
     <header className="sticky top-0 z-40 border-b border-border/90 bg-background/95 backdrop-blur-sm">
       <div className="mx-auto flex h-14 w-full max-w-[1600px] items-center justify-between gap-3 px-4 md:px-6">
         <div className="flex items-center gap-3">
-          <Link className="items-center" href="/strategy">
+          <MobileNav />
+          <Link className="items-center" href="/strategy" aria-label="Home">
             <Image
               src="/ai-trader.svg"
               alt="Tradex logo"
@@ -104,118 +26,18 @@ export function AppHeader() {
             />
           </Link>
           <nav className="hidden items-center gap-1 md:flex">
-            {navLinks.map((item) => {
-              const isActive =
-                pathname === item.href || pathname.startsWith(`${item.href}/`);
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    "rounded-sm border border-transparent px-3 py-1.5 text-sm font-medium text-foreground transition-colors duration-150 hover:bg-primary/10 hover:text-primary",
-                    isActive && "text-primary",
-                  )}
-                >
-                  {item.label}
-                </Link>
-              );
-            })}
+            {PRIMARY_NAV.map((item) => (
+              <NavLink key={item.href} item={item} />
+            ))}
           </nav>
         </div>
 
-        <div className="relative" ref={menuRef}>
-          <Button
-            type="button"
-            variant="outline"
-            className="h-9 gap-2 rounded-sm"
-            onClick={() => setIsMenuOpen((prev) => !prev)}
-          >
-            <span className="flex size-6 items-center justify-center rounded-sm border border-border/80 bg-muted/50 font-mono text-xs font-semibold">
-              {userInitials}
-            </span>
-            <span className="hidden max-w-[180px] truncate text-sm md:inline">
-              {user?.email ?? "anonymous"}
-            </span>
-            <ChevronDown className="size-4" />
-          </Button>
-
-          {isMenuOpen ? (
-            <div className="absolute right-0 mt-2 w-64 rounded-sm border border-border/90 bg-background p-1 backdrop-blur-md">
-              <div className="flex items-center gap-2 px-2 py-2">
-                <User className="size-4 text-muted-foreground" />
-                <p className="truncate text-sm font-medium">
-                  {user?.email ?? "anonymous"}
-                </p>
-              </div>
-              <div className="my-1 h-px bg-border" />
-              <button
-                type="button"
-                className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  router.push("/settings/connect-exchange");
-                }}
-              >
-                Connect Exchange
-              </button>
-              {/* <button
-                type="button"
-                className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  router.push("/trade");
-                }}
-              >
-                Open Trade
-              </button> */}
-              <button
-                type="button"
-                className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
-                onClick={() => {
-                  setIsMenuOpen(false);
-                  router.push("/auto-trade");
-                }}
-              >
-                Open Auto Trade
-              </button>
-              {canOpenAdminPages ? (
-                <>
-                  <button
-                    type="button"
-                    className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      router.push("/admin/runtime");
-                    }}
-                  >
-                    Open Admin Runtime
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full rounded-sm px-2 py-2 text-left text-sm transition-colors duration-75 hover:bg-muted/65"
-                    onClick={() => {
-                      setIsMenuOpen(false);
-                      router.push("/admin/ai-backtest-config");
-                    }}
-                  >
-                    Open AI Backtest Config
-                  </button>
-                </>
-              ) : null}
-              <div className="my-1 h-px bg-border" />
-              <button
-                type="button"
-                className="w-full rounded-sm px-2 py-2 text-left text-sm text-destructive transition-colors duration-75 hover:bg-destructive/12"
-                onClick={() => {
-                  void logout();
-                  setIsMenuOpen(false);
-                  router.replace("/login");
-                }}
-              >
-                Logout
-              </button>
-            </div>
-          ) : null}
+        <div className="flex items-center gap-2">
+          <StatusIndicator />
+          {/* Profile dropdown is desktop-only; mobile uses the hamburger sheet. */}
+          <div className="hidden md:block">
+            <ProfileMenu />
+          </div>
         </div>
       </div>
     </header>

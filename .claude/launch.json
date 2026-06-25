@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "front",
+      "runtimeExecutable": "/bin/sh",
+      "runtimeArgs": [
+        "-c",
+        "export PATH=/Users/alex/.nvm/versions/node/v20.20.2/bin:$PATH; exec node_modules/.bin/next dev -p 3005"
+      ],
+      "port": 3005
+    }
+  ]
+}

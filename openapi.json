@@ -30,6 +30,60 @@
         }
       }
     },
+    "/api/v1/health/agents": {
+      "get": {
+        "tags": [
+          "health"
+        ],
+        "summary": "AI agent data-freshness snapshot for the current user",
+        "operationId": "get_agent_freshness_api_v1_health_agents_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "is_fresh",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Is Fresh"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AgentFreshnessResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/signup": {
       "post": {
         "tags": [
@@ -83,6 +137,98 @@
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/SignInRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/TokenResponse"
+                    },
+                    {
+                      "$ref": "#/components/schemas/TwoFactorRequiredResponse"
+                    }
+                  ],
+                  "title": "Response Sign In Api V1 Auth Signin Post"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/2fa/login/email/request": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request Login Email Code",
+        "description": "Email an ``email_2fa_login`` code for the user behind a valid login challenge.\n\nThe challenge token is validated first (it proves the password already passed),\nso this can't be used for user enumeration; rate-limited per source IP. To avoid\nenumeration, a user without email-2FA still yields a generic ``sent: True`` (no\ncode is actually sent).",
+        "operationId": "request_login_email_code_api_v1_auth_2fa_login_email_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorLoginEmailRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FACodeSentResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/2fa/login": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Login 2Fa",
+        "description": "Second step of login-2FA: exchange the challenge + a second-factor code for the\ntoken pair. ``method=totp`` (default) reuses TotpService.verify (brute-force\nlockout + recovery-code fallback); ``method=email`` consumes an emailed\n``email_2fa_login`` code requested via /2fa/login/email/request.",
+        "operationId": "login_2fa_api_v1_auth_2fa_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TwoFactorLoginRequest"
               }
             }
           },
@@ -167,6 +313,479 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/enroll": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Enroll 2Fa",
+        "operationId": "enroll_2fa_api_v1_auth_2fa_enroll_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpEnrollResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify 2Fa",
+        "operationId": "verify_2fa_api_v1_auth_2fa_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TotpVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/status": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Status 2Fa",
+        "operationId": "status_2fa_api_v1_auth_2fa_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/step-up/email/request": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request Step Up Email Code",
+        "description": "Email an ``email_2fa_step_up`` code for a user with email-2FA enrolled. The\ncode is then submitted to /2fa/step-up with ``method=email``. Rate-limited.",
+        "operationId": "request_step_up_email_code_api_v1_auth_2fa_step_up_email_request_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FACodeSentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/step-up": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Step Up 2Fa",
+        "description": "Exchange a fresh second-factor code for a short-lived step-up token used to\nauthorize critical actions. Accepts either a TOTP/recovery code (``method=totp``,\ndefault) or an emailed code (``method=email``). The minted token is\nfactor-agnostic, so ``require_step_up`` and the gated-endpoint list are unchanged.",
+        "operationId": "step_up_2fa_api_v1_auth_2fa_step_up_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/StepUpRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StepUpResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Disable 2Fa",
+        "operationId": "disable_2fa_api_v1_auth_2fa_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TotpStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/2fa/email/enroll": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Enroll Email 2Fa",
+        "description": "Begin email-2FA enrollment: email a code the user must confirm (verify-on-\nenroll \u2014 the account email is not implicitly trusted). Requires Resend to be\nconfigured (503 otherwise). Throttled per user to prevent email-bombing.",
+        "operationId": "enroll_email_2fa_api_v1_auth_2fa_email_enroll_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FACodeSentResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/email/confirm": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Confirm Email 2Fa",
+        "description": "Confirm enrollment with the emailed code \u2192 activates email-2FA. Wrong/expired\ncode \u2192 400; per-factor lockout \u2192 429.",
+        "operationId": "confirm_email_2fa_api_v1_auth_2fa_email_confirm_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Email2FAConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FAStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/email/status": {
+      "get": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Status Email 2Fa",
+        "operationId": "status_email_2fa_api_v1_auth_2fa_email_status_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FAStatusResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/2fa/email": {
+      "delete": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Disable Email 2Fa",
+        "operationId": "disable_email_2fa_api_v1_auth_2fa_email_delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Email2FAStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/email-confirm/request": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Request Email Confirmation",
+        "description": "T20 (W11c): email a one-time confirmation code for a critical action.\n\nDisabled (503) when Resend isn't configured \u2014 existing flows are unaffected.\nThrottled per user to prevent email-bombing.",
+        "operationId": "request_email_confirmation_api_v1_auth_email_confirm_request_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfirmRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailConfirmStatusResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/auth/email-confirm/verify": {
+      "post": {
+        "tags": [
+          "auth"
+        ],
+        "summary": "Verify Email Confirmation",
+        "operationId": "verify_email_confirmation_api_v1_auth_email_confirm_verify_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmailConfirmVerifyRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmailConfirmVerifyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
                 }
               }
             }
@@ -270,6 +889,75 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/VwapAiComparisonResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/internal/agent-outcomes": {
+      "get": {
+        "tags": [
+          "internal"
+        ],
+        "summary": "Realized trade outcomes by decision event id",
+        "operationId": "agent_outcomes_api_v1_internal_agent_outcomes_get",
+        "parameters": [
+          {
+            "name": "since_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Since Days"
+            }
+          },
+          {
+            "name": "X-Internal-API-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Internal-Api-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "additionalProperties": true
+                    }
+                  },
+                  "title": "Response Agent Outcomes Api V1 Internal Agent Outcomes Get"
                 }
               }
             }
@@ -919,52 +1607,6 @@
         ]
       }
     },
-    "/api/v1/exchange/encrypt": {
-      "post": {
-        "tags": [
-          "exchange"
-        ],
-        "summary": "Encrypt exchange secrets",
-        "operationId": "encrypt_exchange_secrets_api_v1_exchange_encrypt_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ExchangeSecretIn"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ExchangeSecretOut"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
     "/api/v1/exchange/accounts/meta": {
       "get": {
         "tags": [
@@ -998,27 +1640,27 @@
         ],
         "summary": "List exchange accounts",
         "operationId": "list_exchange_accounts_api_v1_exchange_accounts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
             "content": {
               "application/json": {
                 "schema": {
+                  "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/ExchangeAccountRead"
                   },
-                  "type": "array",
                   "title": "Response List Exchange Accounts Api V1 Exchange Accounts Get"
                 }
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       },
       "post": {
         "tags": [
@@ -1026,15 +1668,38 @@
         ],
         "summary": "Create exchange account",
         "operationId": "create_exchange_account_api_v1_exchange_accounts_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
         "requestBody": {
+          "required": true,
           "content": {
             "application/json": {
               "schema": {
                 "$ref": "#/components/schemas/ExchangeAccountCreate"
               }
             }
-          },
-          "required": true
+          }
         },
         "responses": {
           "201": {
@@ -1057,12 +1722,7 @@
               }
             }
           }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
+        }
       }
     },
     "/api/v1/exchange/accounts/{account_id}": {
@@ -1085,6 +1745,22 @@
             "schema": {
               "type": "integer",
               "title": "Account Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
             }
           }
         ],
@@ -1140,6 +1816,22 @@
             "schema": {
               "type": "integer",
               "title": "Account Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
             }
           }
         ],
@@ -1898,6 +2590,23 @@
               ],
               "title": "Account Id"
             }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
           }
         ],
         "responses": {
@@ -1934,6 +2643,24 @@
             "HTTPBearer": []
           }
         ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -1951,6 +2678,334 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AutoTradeConfigRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/strategies/{config_id}/promotion-status": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Promotion KPI-Gate readiness for a strategy",
+        "operationId": "get_strategy_promotion_status_api_v1_live_auto_trade_strategies__config_id__promotion_status_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Config Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PromotionStatusRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/strategies/{config_id}/promote": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Promote a sandbox strategy to live (step-up required)",
+        "operationId": "promote_strategy_api_v1_live_auto_trade_strategies__config_id__promote_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeConfigRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/strategies/{config_id}/demote": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Demote a live strategy back to sandbox (step-up required)",
+        "operationId": "demote_strategy_api_v1_live_auto_trade_strategies__config_id__demote_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeConfigRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/ai-overlay/config": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Get AI trend overlay config",
+        "operationId": "get_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiOverlayConfigResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Update AI trend overlay config",
+        "operationId": "update_ai_overlay_config_api_v1_live_auto_trade_ai_overlay_config_put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Account Id"
+            }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiOverlayConfigUpdateRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiOverlayConfigResponse"
                 }
               }
             }
@@ -1996,6 +3051,22 @@
                 }
               ],
               "title": "Account Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
             }
           }
         ],
@@ -2078,6 +3149,59 @@
         }
       }
     },
+    "/api/v1/live/auto-trade/close-positions": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Manually flatten every open auto-trade position",
+        "description": "Two-step destructive operation. First call with ``confirm: false`` returns HTTP 412 with a preview of every position that would be closed (symbol, side, quantity, conditional-order count). Re-send with ``confirm: true`` to actually cancel TP/SL and market-close. Independent from ``/auto-trade/stop``: this does not flip ``is_running``.",
+        "operationId": "close_auto_trade_positions_api_v1_live_auto_trade_close_positions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoTradeCloseOpenPositionsRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeCloseOpenPositionsResponse"
+                }
+              }
+            }
+          },
+          "412": {
+            "description": "Confirmation required. Body contains an ``AutoTradeClosePreview`` payload."
+          },
+          "404": {
+            "description": "Auto-trade config not found for the given scope."
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/live/auto-trade/state": {
       "get": {
         "tags": [
@@ -2107,6 +3231,23 @@
               ],
               "title": "Account Id"
             }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
           }
         ],
         "responses": {
@@ -2116,6 +3257,114 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/AutoTradeStateResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/strategies/{config_id}/health": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Strategy health score (composite of win rate, drawdown, PnL, stability)",
+        "operationId": "get_strategy_health_api_v1_live_auto_trade_strategies__config_id__health_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "window_days",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 365,
+              "minimum": 1,
+              "default": 30,
+              "title": "Window Days"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/StrategyHealthRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/positions/{position_id}/trace": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Post-trade execution trace (signal \u2192 close timeline) for a position",
+        "operationId": "get_position_trace_api_v1_live_auto_trade_positions__position_id__trace_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "position_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Position Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PositionTraceRead"
                 }
               }
             }
@@ -2194,6 +3443,23 @@
                 }
               ],
               "title": "Account Id"
+            }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
             }
           }
         ],
@@ -2292,6 +3558,23 @@
               "default": 100,
               "title": "Limit"
             }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
           }
         ],
         "responses": {
@@ -2357,6 +3640,23 @@
               ],
               "title": "Account Id"
             }
+          },
+          {
+            "name": "config_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer",
+                  "minimum": 1
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Config Id"
+            }
           }
         ],
         "responses": {
@@ -2381,6 +3681,335 @@
             }
           }
         }
+      }
+    },
+    "/api/v1/live/auto-trade/portfolio": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Aggregated portfolio view across all strategies",
+        "description": "Returns one row per :class:`AutoTradeConfig` owned by the user, with realized/unrealized PnL, open position count, and live sub-account balance. Balance fetches run in parallel; one failing exchange surfaces as ``balance_error`` on that row instead of failing the whole response.",
+        "operationId": "get_auto_trade_portfolio_api_v1_live_auto_trade_portfolio_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PortfolioSummaryResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/live/auto-trade/play-all": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Start every enabled strategy for the user",
+        "description": "Bulk variant of ``/auto-trade/play``. Skips configs that are disabled or already running. One failure does not abort the others \u2014 every config gets its own per-row outcome.",
+        "operationId": "play_all_auto_trade_api_v1_live_auto_trade_play_all_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkLifecycleResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/stop-all": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Stop every running strategy for the user",
+        "description": "Bulk variant of ``/auto-trade/stop``. Only flips ``is_running=false`` \u2014 open positions are deliberately not closed. Use ``/auto-trade/close-positions`` (per account) when you want to flatten.",
+        "operationId": "stop_all_auto_trade_api_v1_live_auto_trade_stop_all_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BulkLifecycleResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/live/auto-trade/balance": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "USDT balance for one strategy's sub-account",
+        "description": "Powers the per-strategy budget card. Returns the free/total USDT balance fetched live from the exchange. ``error`` non-null means the fetch failed; the dashboard treats it as 'balance unavailable'.",
+        "operationId": "get_auto_trade_balance_api_v1_live_auto_trade_balance_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "account_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Account Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AccountBalanceResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/notifications/telegram": {
+      "get": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Get Telegram notification settings",
+        "operationId": "get_telegram_settings_api_v1_live_notifications_telegram_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramSettingsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Update Telegram notification settings",
+        "operationId": "update_telegram_settings_api_v1_live_notifications_telegram_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TelegramSettingsUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramSettingsOut"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "delete": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Unlink Telegram notifications",
+        "operationId": "unlink_telegram_api_v1_live_notifications_telegram_delete",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramSettingsOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/live/notifications/telegram/link": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Generate a one-time Telegram deep link",
+        "operationId": "link_telegram_api_v1_live_notifications_telegram_link_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramLinkOut"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/live/notifications/telegram/test": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Send a Telegram test notification",
+        "operationId": "test_telegram_api_v1_live_notifications_telegram_test_post",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/TelegramTestResult"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/events/stream": {
+      "get": {
+        "tags": [
+          "events"
+        ],
+        "summary": "Live risk/governance event stream (SSE)",
+        "description": "Push the authenticated user's streamable events (kill-switch, KPI-guard,\nportfolio-DD halt, data-stale, \u2026) as Server-Sent Events.\n\nNote: browser ``EventSource`` cannot set an Authorization header, so the\nfrontend passes the bearer token via the proxy/cookie layer. The generator\nstops cleanly on client disconnect and on server shutdown (CancelledError).",
+        "operationId": "stream_events_api_v1_events_stream_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/v1/admin/runtime": {
@@ -2520,6 +4149,32 @@
         }
       }
     },
+    "/api/v1/ai-backtests/ai-configs/schema": {
+      "get": {
+        "tags": [
+          "ai-backtests"
+        ],
+        "summary": "Get Ai Config Schema",
+        "operationId": "get_ai_config_schema_api_v1_ai_backtests_ai_configs_schema_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Ai Config Schema Api V1 Ai Backtests Ai Configs Schema Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ai-backtests/ai-configs": {
       "get": {
         "tags": [
@@ -2546,6 +4201,32 @@
         ]
       }
     },
+    "/api/v1/ai-backtests/agents": {
+      "get": {
+        "tags": [
+          "ai-backtests"
+        ],
+        "summary": "List Agents",
+        "operationId": "list_agents_api_v1_ai_backtests_agents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Agents Api V1 Ai Backtests Agents Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/v1/ai-backtests/agent-weights": {
       "get": {
         "tags": [
@@ -2560,6 +4241,32 @@
               "application/json": {
                 "schema": {
                   "title": "Response List Agent Weights Api V1 Ai Backtests Agent Weights Get"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/v1/ai-backtests/ai-forecast-catalogue/metrics-schema": {
+      "get": {
+        "tags": [
+          "ai-backtests"
+        ],
+        "summary": "Get Metrics Schema",
+        "operationId": "get_metrics_schema_api_v1_ai_backtests_ai_forecast_catalogue_metrics_schema_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response Get Metrics Schema Api V1 Ai Backtests Ai Forecast Catalogue Metrics Schema Get"
                 }
               }
             }
@@ -2932,6 +4639,22 @@
               "type": "string",
               "title": "Ai Config Id"
             }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
           }
         ],
         "requestBody": {
@@ -2953,6 +4676,106 @@
                 "schema": {
                   "title": "Response Apply Agent Weight Suggestion Api V1 Ai Backtests Agent Weights Suggestions  Ai Config Id  Apply Post"
                 }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai-backtests/artifacts": {
+      "get": {
+        "tags": [
+          "ai-backtests"
+        ],
+        "summary": "List Export Artifacts",
+        "operationId": "list_export_artifacts_api_v1_ai_backtests_artifacts_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "prefix",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "maxLength": 120
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Prefix"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "title": "Response List Export Artifacts Api V1 Ai Backtests Artifacts Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ai-backtests/artifacts/{filename}": {
+      "get": {
+        "tags": [
+          "ai-backtests"
+        ],
+        "summary": "Get Export Artifact",
+        "operationId": "get_export_artifact_api_v1_ai_backtests_artifacts__filename__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "filename",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Filename"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
               }
             }
           },
@@ -3672,6 +5495,65 @@
         ],
         "title": "AccountAutoTradeEventRead"
       },
+      "AccountBalanceResponse": {
+        "properties": {
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "exchange_name": {
+            "type": "string",
+            "title": "Exchange Name"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "free_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Free Usdt"
+          },
+          "total_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Usdt"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "account_id",
+          "exchange_name",
+          "mode",
+          "free_usdt",
+          "total_usdt"
+        ],
+        "title": "AccountBalanceResponse",
+        "description": "USDT balance snapshot for one strategy's sub-account.\n\nDrives the per-strategy budget card. ``error`` non-null means the adapter\ncall failed; the dashboard treats those as 'balance unavailable' and\nfalls back to local margin-used figures."
+      },
       "AccountTradeRead": {
         "properties": {
           "exchange_trade_id": {
@@ -3763,6 +5645,50 @@
           "quote_currency": {
             "type": "string",
             "title": "Quote Currency"
+          },
+          "gross_realized_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Realized Usdt"
+          },
+          "commission_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Usdt"
+          },
+          "funding_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Usdt"
+          },
+          "net_pnl_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pnl Usdt"
           }
         },
         "type": "object",
@@ -4593,6 +6519,79 @@
         ],
         "title": "AdminUserRuntimeStatsRead"
       },
+      "AgentFreshnessRead": {
+        "properties": {
+          "profile_id": {
+            "type": "integer",
+            "title": "Profile Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "agent_key": {
+            "type": "string",
+            "title": "Agent Key"
+          },
+          "last_data_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Data At"
+          },
+          "age_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Age Minutes"
+          },
+          "is_fresh": {
+            "type": "boolean",
+            "title": "Is Fresh"
+          },
+          "checked_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Checked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "profile_id",
+          "symbol",
+          "agent_key",
+          "last_data_at",
+          "age_minutes",
+          "is_fresh",
+          "checked_at"
+        ],
+        "title": "AgentFreshnessRead",
+        "description": "Current data-freshness snapshot for one (profile, agent) (W8 \u2014 T3.3)."
+      },
+      "AgentFreshnessResponse": {
+        "properties": {
+          "statuses": {
+            "items": {
+              "$ref": "#/components/schemas/AgentFreshnessRead"
+            },
+            "type": "array",
+            "title": "Statuses"
+          }
+        },
+        "type": "object",
+        "title": "AgentFreshnessResponse"
+      },
       "AiForecastBacktestFile": {
         "properties": {
           "file_name": {
@@ -4626,6 +6625,204 @@
           "files"
         ],
         "title": "AiForecastBacktestFilesResponse"
+      },
+      "AiOverlayConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "description": "Global overlay kill-switch.",
+            "default": false
+          },
+          "entry_side_lock_enabled": {
+            "type": "boolean",
+            "title": "Entry Side Lock Enabled",
+            "description": "Block entries whose side contradicts ai_trend direction (phase 1).",
+            "default": false
+          },
+          "atr_scaling_enabled": {
+            "type": "boolean",
+            "title": "Atr Scaling Enabled",
+            "description": "Scale the SL ATR multiplier by ai_trend.strength (phase 2).",
+            "default": false
+          },
+          "rsi_scaling_enabled": {
+            "type": "boolean",
+            "title": "Rsi Scaling Enabled",
+            "description": "Shift RSI watcher thresholds by ai_trend direction (phase 3).",
+            "default": false
+          },
+          "stale_max_minutes": {
+            "type": "integer",
+            "maximum": 1440.0,
+            "minimum": 1.0,
+            "title": "Stale Max Minutes",
+            "description": "Maximum age of the ai_trend record (minutes). Older records trigger fail-open fallback.",
+            "default": 240
+          },
+          "min_strength": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Min Strength",
+            "description": "Minimum ai_trend.strength below which the overlay treats the signal as no-op.",
+            "default": 0.4
+          },
+          "atr_scale_range": {
+            "prefixItems": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "type": "array",
+            "maxItems": 2,
+            "minItems": 2,
+            "title": "Atr Scale Range",
+            "description": "(min, max) multiplier applied to the base ATR multiplier. Bounds the runtime override.",
+            "default": [
+              0.8,
+              1.2
+            ]
+          },
+          "rsi_max_shift": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 0.0,
+            "title": "Rsi Max Shift",
+            "description": "Maximum absolute shift (in points) applied to RSI thresholds by the overlay.",
+            "default": 5
+          }
+        },
+        "type": "object",
+        "title": "AiOverlayConfig",
+        "description": "Per-user overlay configuration stored as JSON on AutoTradeConfig.\n\nAll flags default to ``False`` so existing users see no behaviour\nchange until they explicitly opt in. ``stale_max_minutes`` matches the\nplan-mandated 4-hour freshness ceiling for ai_trend."
+      },
+      "AiOverlayConfigResponse": {
+        "properties": {
+          "config": {
+            "$ref": "#/components/schemas/AiOverlayConfig"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config"
+        ],
+        "title": "AiOverlayConfigResponse",
+        "description": "API response wrapper."
+      },
+      "AiOverlayConfigUpdateRequest": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "entry_side_lock_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Entry Side Lock Enabled"
+          },
+          "atr_scaling_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atr Scaling Enabled"
+          },
+          "rsi_scaling_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsi Scaling Enabled"
+          },
+          "stale_max_minutes": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1440.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Max Minutes"
+          },
+          "min_strength": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Min Strength"
+          },
+          "atr_scale_range": {
+            "anyOf": [
+              {
+                "prefixItems": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "number"
+                  }
+                ],
+                "type": "array",
+                "maxItems": 2,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Atr Scale Range"
+          },
+          "rsi_max_shift": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 20.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rsi Max Shift"
+          }
+        },
+        "type": "object",
+        "title": "AiOverlayConfigUpdateRequest",
+        "description": "API request \u2014 partial update; missing fields keep their current value."
       },
       "AtrObSignalRequest": {
         "properties": {
@@ -5106,6 +7303,124 @@
         ],
         "title": "AuthUserResponse"
       },
+      "AutoTradeCloseOpenPositionsRequest": {
+        "properties": {
+          "account_id": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Id",
+            "description": "Optional account scope. Required only if the user owns more than one auto-trade config. Otherwise the unique config is resolved from ``user_id`` alone."
+          },
+          "confirm": {
+            "type": "boolean",
+            "title": "Confirm",
+            "description": "Must be true to actually close the positions. Without it the server returns 412 + a preview and changes nothing.",
+            "default": false
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 200
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason",
+            "description": "Optional free-text reason recorded in the audit event."
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeCloseOpenPositionsRequest",
+        "description": "Request body for the manual ``/auto-trade/close-positions`` flatten flow.\n\nThe flow is intentionally two-step:\n\n  1. Client sends ``confirm: false`` (or omits it). The server returns\n     HTTP 412 with a preview of what would be closed \u2014 list of positions,\n     their sides/quantities, and how many conditional orders would be\n     cancelled. Nothing changes on the exchange or in the DB.\n  2. Client reviews the preview, then re-sends with ``confirm: true``.\n     The server proceeds to cancel TP/SL conditional orders and market-\n     close every open ``AutoTradePosition`` for the resolved scope.\n\nAuto-trade ``is_running`` is **not** flipped automatically. Stop and close\nare independent operations \u2014 the user explicitly asked for them to be\ndecoupled. Pending signals in the queue are also untouched."
+      },
+      "AutoTradeCloseOpenPositionsResponse": {
+        "properties": {
+          "closed": {
+            "items": {
+              "$ref": "#/components/schemas/AutoTradeClosedPositionInfo"
+            },
+            "type": "array",
+            "title": "Closed"
+          },
+          "failed": {
+            "items": {
+              "$ref": "#/components/schemas/AutoTradeFailedClosePositionInfo"
+            },
+            "type": "array",
+            "title": "Failed"
+          },
+          "skipped_already_closed": {
+            "items": {
+              "type": "integer"
+            },
+            "type": "array",
+            "title": "Skipped Already Closed"
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeCloseOpenPositionsResponse"
+      },
+      "AutoTradeClosedPositionInfo": {
+        "properties": {
+          "position_id": {
+            "type": "integer",
+            "title": "Position Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "side": {
+            "type": "string",
+            "enum": [
+              "LONG",
+              "SHORT"
+            ],
+            "title": "Side"
+          },
+          "executed_qty": {
+            "type": "number",
+            "title": "Executed Qty"
+          },
+          "avg_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avg Price"
+          },
+          "cancelled_conditional_orders": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Cancelled Conditional Orders"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "symbol",
+          "side",
+          "executed_qty",
+          "avg_price"
+        ],
+        "title": "AutoTradeClosedPositionInfo",
+        "description": "Per-position outcome row in the success response."
+      },
       "AutoTradeConfigRead": {
         "properties": {
           "id": {
@@ -5173,6 +7488,51 @@
                 "type": "null"
               }
             ]
+          },
+          "strategy_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Name"
+          },
+          "attached_forecast_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attached Forecast Id"
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutoTradeRiskConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "lifecycle_stage": {
+            "type": "string",
+            "enum": [
+              "research",
+              "sandbox",
+              "validation",
+              "live",
+              "rejected",
+              "archived"
+            ],
+            "title": "Lifecycle Stage",
+            "default": "live"
           },
           "last_started_at": {
             "anyOf": [
@@ -5264,14 +7624,14 @@
           "min_confidence_pct": {
             "type": "number",
             "maximum": 100.0,
-            "minimum": 0.0,
+            "minimum": 1.0,
             "title": "Min Confidence Pct",
             "default": 62.0
           },
           "fast_close_confidence_pct": {
             "type": "number",
             "maximum": 100.0,
-            "minimum": 0.0,
+            "minimum": 1.0,
             "title": "Fast Close Confidence Pct",
             "default": 80.0
           },
@@ -5301,6 +7661,40 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/StrategyProfileConfig"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "strategy_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Name"
+          },
+          "attached_forecast_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Attached Forecast Id"
+          },
+          "risk": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AutoTradeRiskConfig"
               },
               {
                 "type": "null"
@@ -5470,6 +7864,29 @@
         },
         "type": "object",
         "title": "AutoTradeEventsResponse"
+      },
+      "AutoTradeFailedClosePositionInfo": {
+        "properties": {
+          "position_id": {
+            "type": "integer",
+            "title": "Position Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "error": {
+            "type": "string",
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "symbol",
+          "error"
+        ],
+        "title": "AutoTradeFailedClosePositionInfo"
       },
       "AutoTradeLedgerTradeRead": {
         "properties": {
@@ -5817,6 +8234,50 @@
             ],
             "title": "Total Pnl Usdt"
           },
+          "gross_realized_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gross Realized Usdt"
+          },
+          "commission_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Commission Usdt"
+          },
+          "funding_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Funding Usdt"
+          },
+          "net_pnl_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Net Pnl Usdt"
+          },
           "pnl_pct": {
             "anyOf": [
               {
@@ -6036,6 +8497,17 @@
             ],
             "title": "Close History Id"
           },
+          "decision_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Event Id"
+          },
           "raw_open_order": {
             "additionalProperties": true,
             "type": "object",
@@ -6185,6 +8657,303 @@
           "total_trade_pnl_usdt"
         ],
         "title": "AutoTradePositionsSummaryRead"
+      },
+      "AutoTradeRiskConfig": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled",
+            "default": true
+          },
+          "daily_loss_limit_usdt": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Loss Limit Usdt"
+          },
+          "daily_loss_limit_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Daily Loss Limit Pct"
+          },
+          "max_open_positions": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Open Positions"
+          },
+          "max_open_positions_per_symbol": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Open Positions Per Symbol"
+          },
+          "exposure_cap_usdt": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Exposure Cap Usdt"
+          },
+          "leverage_ceiling": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 125.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Leverage Ceiling"
+          },
+          "conflicting_signal_policy": {
+            "type": "string",
+            "enum": [
+              "off",
+              "block_opposite"
+            ],
+            "title": "Conflicting Signal Policy",
+            "default": "off"
+          },
+          "kpi_guard_enabled": {
+            "type": "boolean",
+            "title": "Kpi Guard Enabled",
+            "default": false
+          },
+          "kpi_guard_max_dd_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi Guard Max Dd Pct"
+          },
+          "kpi_guard_max_daily_loss_usdt": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi Guard Max Daily Loss Usdt"
+          },
+          "kpi_guard_max_daily_loss_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi Guard Max Daily Loss Pct"
+          },
+          "kpi_guard_min_win_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi Guard Min Win Rate Pct"
+          },
+          "kpi_guard_min_trades": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi Guard Min Trades"
+          },
+          "kill_switch_enabled": {
+            "type": "boolean",
+            "title": "Kill Switch Enabled",
+            "default": false
+          },
+          "kill_switch_atr_spike_mult": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kill Switch Atr Spike Mult"
+          },
+          "kill_switch_atr_period": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 2.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kill Switch Atr Period"
+          },
+          "kill_switch_price_move_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kill Switch Price Move Pct"
+          },
+          "kill_switch_cooldown_seconds": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kill Switch Cooldown Seconds"
+          },
+          "anomaly_detection_enabled": {
+            "type": "boolean",
+            "title": "Anomaly Detection Enabled",
+            "default": false
+          },
+          "anomaly_z_threshold": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 20.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anomaly Z Threshold"
+          },
+          "anomaly_window": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 1000.0,
+                "minimum": 2.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Anomaly Window"
+          },
+          "promote_min_win_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promote Min Win Rate Pct"
+          },
+          "promote_max_dd_pct": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 100.0,
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promote Max Dd Pct"
+          },
+          "promote_min_trades": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promote Min Trades"
+          },
+          "promote_min_sandbox_days": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Promote Min Sandbox Days"
+          }
+        },
+        "type": "object",
+        "title": "AutoTradeRiskConfig",
+        "description": "Pre-Trade Risk Engine limits for a strategy (W8).\n\nEvery limit is optional; ``None`` means \"rule off\". The model is used both\nas nested input on the config upsert and (with ``from_attributes``) as the\nserialized form of the :class:`app.models.auto_trade_risk_config.AutoTradeRiskConfig` row on read. Bounds here mirror the table-level\nCheckConstraints so a bad value is rejected at the API edge with a clear\n422 rather than surfacing as a database error."
       },
       "AutoTradeStateResponse": {
         "properties": {
@@ -6436,6 +9205,107 @@
         ],
         "title": "BuilderSignalRunRequest"
       },
+      "BulkLifecycleResponse": {
+        "properties": {
+          "requested": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Requested"
+          },
+          "succeeded": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Succeeded"
+          },
+          "skipped": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Skipped"
+          },
+          "failed": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Failed"
+          },
+          "results": {
+            "items": {
+              "$ref": "#/components/schemas/BulkLifecycleResultItem"
+            },
+            "type": "array",
+            "title": "Results"
+          }
+        },
+        "type": "object",
+        "required": [
+          "requested",
+          "succeeded",
+          "skipped",
+          "failed"
+        ],
+        "title": "BulkLifecycleResponse"
+      },
+      "BulkLifecycleResultItem": {
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "title": "Config Id"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "strategy_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Name"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "ok",
+              "skipped",
+              "failed"
+            ],
+            "title": "Status"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_id",
+          "account_id",
+          "status"
+        ],
+        "title": "BulkLifecycleResultItem",
+        "description": "Per-config outcome row in ``BulkLifecycleResponse``."
+      },
       "CandleInput": {
         "properties": {
           "time": {
@@ -6473,6 +9343,122 @@
           "volume"
         ],
         "title": "CandleInput"
+      },
+      "Email2FACodeSentResponse": {
+        "properties": {
+          "sent": {
+            "type": "boolean",
+            "title": "Sent"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent"
+        ],
+        "title": "Email2FACodeSentResponse"
+      },
+      "Email2FAConfirmRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 4,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "Email2FAConfirmRequest"
+      },
+      "Email2FAStatusResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled",
+          "available"
+        ],
+        "title": "Email2FAStatusResponse"
+      },
+      "EmailConfirmRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "maxLength": 48,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Action"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action"
+        ],
+        "title": "EmailConfirmRequest"
+      },
+      "EmailConfirmStatusResponse": {
+        "properties": {
+          "sent": {
+            "type": "boolean",
+            "title": "Sent"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "sent",
+          "enabled"
+        ],
+        "title": "EmailConfirmStatusResponse"
+      },
+      "EmailConfirmVerifyRequest": {
+        "properties": {
+          "action": {
+            "type": "string",
+            "maxLength": 48,
+            "minLength": 1,
+            "pattern": "^[a-z0-9_]+$",
+            "title": "Action"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 4,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "action",
+          "code"
+        ],
+        "title": "EmailConfirmVerifyRequest"
+      },
+      "EmailConfirmVerifyResponse": {
+        "properties": {
+          "confirmed": {
+            "type": "boolean",
+            "title": "Confirmed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "confirmed"
+        ],
+        "title": "EmailConfirmVerifyResponse"
       },
       "ExchangeAccountCreate": {
         "properties": {
@@ -6694,66 +9680,6 @@
           "default_mode"
         ],
         "title": "ExchangeAccountsMetaResponse"
-      },
-      "ExchangeSecretIn": {
-        "properties": {
-          "api_key": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Api Key"
-          },
-          "api_secret": {
-            "type": "string",
-            "minLength": 1,
-            "title": "Api Secret"
-          },
-          "passphrase": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Passphrase"
-          }
-        },
-        "type": "object",
-        "required": [
-          "api_key",
-          "api_secret"
-        ],
-        "title": "ExchangeSecretIn"
-      },
-      "ExchangeSecretOut": {
-        "properties": {
-          "encrypted_api_key": {
-            "type": "string",
-            "title": "Encrypted Api Key"
-          },
-          "encrypted_api_secret": {
-            "type": "string",
-            "title": "Encrypted Api Secret"
-          },
-          "encrypted_passphrase": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Encrypted Passphrase"
-          }
-        },
-        "type": "object",
-        "required": [
-          "encrypted_api_key",
-          "encrypted_api_secret"
-        ],
-        "title": "ExchangeSecretOut"
       },
       "GridBotCatalog": {
         "properties": {
@@ -8759,6 +11685,46 @@
         ],
         "title": "PortfolioStrategyInput"
       },
+      "PortfolioSummaryResponse": {
+        "properties": {
+          "strategies": {
+            "items": {
+              "$ref": "#/components/schemas/StrategyPortfolioEntryRead"
+            },
+            "type": "array",
+            "title": "Strategies"
+          },
+          "total_realized_pnl_usdt": {
+            "type": "number",
+            "title": "Total Realized Pnl Usdt"
+          },
+          "total_unrealized_pnl_usdt": {
+            "type": "number",
+            "title": "Total Unrealized Pnl Usdt"
+          },
+          "total_open_positions": {
+            "type": "integer",
+            "title": "Total Open Positions"
+          },
+          "total_running_strategies": {
+            "type": "integer",
+            "title": "Total Running Strategies"
+          },
+          "portfolio_max_dd_pct": {
+            "type": "number",
+            "title": "Portfolio Max Dd Pct",
+            "default": 0.0
+          }
+        },
+        "type": "object",
+        "required": [
+          "total_realized_pnl_usdt",
+          "total_unrealized_pnl_usdt",
+          "total_open_positions",
+          "total_running_strategies"
+        ],
+        "title": "PortfolioSummaryResponse"
+      },
       "PortfolioUserStrategyInput": {
         "properties": {
           "strategy_id": {
@@ -8779,6 +11745,221 @@
           "strategy_id"
         ],
         "title": "PortfolioUserStrategyInput"
+      },
+      "PositionTraceRead": {
+        "properties": {
+          "position_id": {
+            "type": "integer",
+            "title": "Position Id"
+          },
+          "symbol": {
+            "type": "string",
+            "title": "Symbol"
+          },
+          "side": {
+            "type": "string",
+            "title": "Side"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "entry_price": {
+            "type": "number",
+            "title": "Entry Price"
+          },
+          "close_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Price"
+          },
+          "close_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Reason"
+          },
+          "state": {
+            "type": "string",
+            "title": "State"
+          },
+          "decision_event_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Decision Event Id"
+          },
+          "open_history_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open History Id"
+          },
+          "close_history_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close History Id"
+          },
+          "open_order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Open Order Id"
+          },
+          "close_order_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Close Order Id"
+          },
+          "opened_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Opened At"
+          },
+          "closed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Closed At"
+          },
+          "events": {
+            "items": {
+              "$ref": "#/components/schemas/AutoTradeEventRead"
+            },
+            "type": "array",
+            "title": "Events"
+          }
+        },
+        "type": "object",
+        "required": [
+          "position_id",
+          "symbol",
+          "side",
+          "status",
+          "entry_price",
+          "close_price",
+          "close_reason",
+          "state",
+          "decision_event_id",
+          "open_history_id",
+          "close_history_id",
+          "open_order_id",
+          "close_order_id",
+          "opened_at",
+          "closed_at"
+        ],
+        "title": "PositionTraceRead",
+        "description": "Post-Trade execution trace for one position (W9 \u2014 T3.1).\n\nThe signal\u2192close timeline: position metadata + linkage pointers (the AI\n``decision_event_id`` points at core's ``ai_decision_events`` and is surfaced,\nnot dereferenced) + the chronological ``AutoTradeEvent`` list."
+      },
+      "PromotionGateCriterionRead": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "actual": {
+            "type": "number",
+            "title": "Actual"
+          },
+          "threshold": {
+            "type": "number",
+            "title": "Threshold"
+          },
+          "passed": {
+            "type": "boolean",
+            "title": "Passed"
+          }
+        },
+        "type": "object",
+        "required": [
+          "name",
+          "actual",
+          "threshold",
+          "passed"
+        ],
+        "title": "PromotionGateCriterionRead",
+        "description": "One promotion-gate criterion with its actual value vs threshold (B5)."
+      },
+      "PromotionStatusRead": {
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "title": "Config Id"
+          },
+          "lifecycle_stage": {
+            "type": "string",
+            "title": "Lifecycle Stage"
+          },
+          "sandbox_days": {
+            "type": "number",
+            "title": "Sandbox Days"
+          },
+          "can_promote": {
+            "type": "boolean",
+            "title": "Can Promote"
+          },
+          "criteria": {
+            "items": {
+              "$ref": "#/components/schemas/PromotionGateCriterionRead"
+            },
+            "type": "array",
+            "title": "Criteria"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_id",
+          "lifecycle_stage",
+          "sandbox_days",
+          "can_promote",
+          "criteria"
+        ],
+        "title": "PromotionStatusRead",
+        "description": "Current lifecycle stage + KPI-Gate readiness for a strategy (B5 \u2014 W10)."
       },
       "RefreshTokenRequest": {
         "properties": {
@@ -8876,6 +12057,48 @@
         "type": "object",
         "title": "SignalExecuteRequest"
       },
+      "StepUpRequest": {
+        "properties": {
+          "method": {
+            "type": "string",
+            "enum": [
+              "totp",
+              "email"
+            ],
+            "title": "Method",
+            "default": "totp"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 4,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "StepUpRequest"
+      },
+      "StepUpResponse": {
+        "properties": {
+          "step_up_token": {
+            "type": "string",
+            "title": "Step Up Token"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          }
+        },
+        "type": "object",
+        "required": [
+          "step_up_token",
+          "expires_in"
+        ],
+        "title": "StepUpResponse"
+      },
       "StrategyCreate": {
         "properties": {
           "name": {
@@ -8925,6 +12148,78 @@
           "name"
         ],
         "title": "StrategyCreate"
+      },
+      "StrategyHealthRead": {
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "title": "Config Id"
+          },
+          "window_days": {
+            "type": "integer",
+            "title": "Window Days"
+          },
+          "sample_size": {
+            "type": "integer",
+            "title": "Sample Size"
+          },
+          "win_rate_pct": {
+            "type": "number",
+            "title": "Win Rate Pct"
+          },
+          "max_dd_pct": {
+            "type": "number",
+            "title": "Max Dd Pct",
+            "description": "Max drawdown as a % of the per-trade notional base (position_size_usdt), NOT account equity \u2014 a W9 proxy pending real-balance calibration. UI: label accordingly; do not present as account drawdown."
+          },
+          "total_pnl_usdt": {
+            "type": "number",
+            "title": "Total Pnl Usdt"
+          },
+          "roi_pct": {
+            "type": "number",
+            "title": "Roi Pct",
+            "description": "Realized PnL as a % of the per-trade notional base (position_size_usdt), NOT account equity \u2014 a W9 proxy (can read high). Calibrate the base to the sub-account balance before relying on it; UI must label the denominator."
+          },
+          "sharpe_proxy": {
+            "type": "number",
+            "title": "Sharpe Proxy"
+          },
+          "stability_score": {
+            "type": "number",
+            "title": "Stability Score"
+          },
+          "health_score": {
+            "type": "number",
+            "title": "Health Score"
+          },
+          "health_class": {
+            "type": "string",
+            "title": "Health Class"
+          },
+          "computed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Computed At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_id",
+          "window_days",
+          "sample_size",
+          "win_rate_pct",
+          "max_dd_pct",
+          "total_pnl_usdt",
+          "roi_pct",
+          "sharpe_proxy",
+          "stability_score",
+          "health_score",
+          "health_class",
+          "computed_at"
+        ],
+        "title": "StrategyHealthRead",
+        "description": "On-read composite health for one strategy (W8 \u2014 T2.1)."
       },
       "StrategyMetaResponse": {
         "properties": {
@@ -8981,6 +12276,253 @@
           "version_max_length"
         ],
         "title": "StrategyMetaResponse"
+      },
+      "StrategyPortfolioEntryRead": {
+        "properties": {
+          "config_id": {
+            "type": "integer",
+            "title": "Config Id"
+          },
+          "account_id": {
+            "type": "integer",
+            "title": "Account Id"
+          },
+          "account_label": {
+            "type": "string",
+            "title": "Account Label"
+          },
+          "exchange_name": {
+            "type": "string",
+            "title": "Exchange Name"
+          },
+          "mode": {
+            "type": "string",
+            "title": "Mode"
+          },
+          "lifecycle_stage": {
+            "type": "string",
+            "title": "Lifecycle Stage"
+          },
+          "strategy_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Strategy Name"
+          },
+          "profile_id": {
+            "type": "integer",
+            "title": "Profile Id"
+          },
+          "profile_symbol": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Profile Symbol"
+          },
+          "is_running": {
+            "type": "boolean",
+            "title": "Is Running"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "open_positions_count": {
+            "type": "integer",
+            "title": "Open Positions Count"
+          },
+          "margin_used_usdt": {
+            "type": "number",
+            "title": "Margin Used Usdt"
+          },
+          "realized_pnl_usdt": {
+            "type": "number",
+            "title": "Realized Pnl Usdt"
+          },
+          "unrealized_pnl_usdt": {
+            "type": "number",
+            "title": "Unrealized Pnl Usdt"
+          },
+          "balance_total_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Total Usdt"
+          },
+          "balance_free_usdt": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Free Usdt"
+          },
+          "last_started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Started At"
+          },
+          "last_stopped_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Stopped At"
+          },
+          "balance_error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Balance Error"
+          },
+          "win_rate_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Win Rate Pct"
+          },
+          "max_dd_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Dd Pct",
+            "description": "Max drawdown as a % of the per-trade notional base, NOT account equity (W9 proxy). UI must label the denominator; calibration pending."
+          },
+          "sharpe_proxy": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sharpe Proxy"
+          },
+          "roi_pct": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Roi Pct",
+            "description": "Realized PnL as a % of the per-trade notional base, NOT account equity (W9 proxy \u2014 can read high). UI must label the denominator; calibration pending."
+          },
+          "health_class": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Health Class"
+          },
+          "sample_size": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sample Size"
+          },
+          "kpi_as_of": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Kpi As Of",
+            "description": "When the surfaced KPIs were computed: the snapshot's computed_at when read from the cron-written snapshot, or the live recompute time when the snapshot was missing/stale for a running strategy. Null when no KPIs."
+          }
+        },
+        "type": "object",
+        "required": [
+          "config_id",
+          "account_id",
+          "account_label",
+          "exchange_name",
+          "mode",
+          "lifecycle_stage",
+          "strategy_name",
+          "profile_id",
+          "profile_symbol",
+          "is_running",
+          "enabled",
+          "open_positions_count",
+          "margin_used_usdt",
+          "realized_pnl_usdt",
+          "unrealized_pnl_usdt",
+          "balance_total_usdt",
+          "balance_free_usdt",
+          "last_started_at",
+          "last_stopped_at",
+          "balance_error",
+          "win_rate_pct",
+          "max_dd_pct",
+          "sharpe_proxy",
+          "roi_pct",
+          "health_class",
+          "sample_size"
+        ],
+        "title": "StrategyPortfolioEntryRead",
+        "description": "One strategy slot in the aggregated portfolio view.\n\nEach entry corresponds to a single :class:`AutoTradeConfig` row, which by\nW7 design owns its own exchange sub-account (credential). Balance values\nare pulled live from the exchange; ``balance_error`` is populated when\nthat sub-account's adapter call failed so the dashboard can show a\ndegraded state instead of failing the whole portfolio fetch."
       },
       "StrategyProfileConfig": {
         "properties": {
@@ -9334,6 +12876,161 @@
         "type": "object",
         "title": "StrategyUpdate"
       },
+      "TelegramLinkOut": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "title": "Code"
+          },
+          "deep_link": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Deep Link"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TelegramLinkOut"
+      },
+      "TelegramSettingsOut": {
+        "properties": {
+          "linked": {
+            "type": "boolean",
+            "title": "Linked"
+          },
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          },
+          "notify_on_open": {
+            "type": "boolean",
+            "title": "Notify On Open"
+          },
+          "notify_on_close": {
+            "type": "boolean",
+            "title": "Notify On Close"
+          },
+          "notify_on_risk": {
+            "type": "boolean",
+            "title": "Notify On Risk"
+          },
+          "linked_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked At"
+          }
+        },
+        "type": "object",
+        "required": [
+          "linked",
+          "enabled",
+          "notify_on_open",
+          "notify_on_close",
+          "notify_on_risk"
+        ],
+        "title": "TelegramSettingsOut"
+      },
+      "TelegramSettingsUpdate": {
+        "properties": {
+          "enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Enabled"
+          },
+          "notify_on_open": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify On Open"
+          },
+          "notify_on_close": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify On Close"
+          },
+          "notify_on_risk": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notify On Risk"
+          }
+        },
+        "type": "object",
+        "title": "TelegramSettingsUpdate"
+      },
+      "TelegramTestResult": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "error": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error"
+          }
+        },
+        "type": "object",
+        "required": [
+          "status"
+        ],
+        "title": "TelegramTestResult"
+      },
       "TokenResponse": {
         "properties": {
           "access_token": {
@@ -9366,6 +13063,133 @@
           "refresh_expires_in"
         ],
         "title": "TokenResponse"
+      },
+      "TotpEnrollResponse": {
+        "properties": {
+          "provisioning_uri": {
+            "type": "string",
+            "title": "Provisioning Uri"
+          },
+          "secret": {
+            "type": "string",
+            "title": "Secret"
+          },
+          "recovery_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Recovery Codes"
+          }
+        },
+        "type": "object",
+        "required": [
+          "provisioning_uri",
+          "secret",
+          "recovery_codes"
+        ],
+        "title": "TotpEnrollResponse"
+      },
+      "TotpStatusResponse": {
+        "properties": {
+          "enabled": {
+            "type": "boolean",
+            "title": "Enabled"
+          }
+        },
+        "type": "object",
+        "required": [
+          "enabled"
+        ],
+        "title": "TotpStatusResponse"
+      },
+      "TotpVerifyRequest": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 6,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "code"
+        ],
+        "title": "TotpVerifyRequest"
+      },
+      "TwoFactorLoginEmailRequest": {
+        "properties": {
+          "challenge_token": {
+            "type": "string",
+            "title": "Challenge Token"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge_token"
+        ],
+        "title": "TwoFactorLoginEmailRequest"
+      },
+      "TwoFactorLoginRequest": {
+        "properties": {
+          "challenge_token": {
+            "type": "string",
+            "title": "Challenge Token"
+          },
+          "method": {
+            "type": "string",
+            "enum": [
+              "totp",
+              "email"
+            ],
+            "title": "Method",
+            "default": "totp"
+          },
+          "code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 4,
+            "title": "Code"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge_token",
+          "code"
+        ],
+        "title": "TwoFactorLoginRequest"
+      },
+      "TwoFactorRequiredResponse": {
+        "properties": {
+          "two_factor_required": {
+            "type": "boolean",
+            "const": true,
+            "title": "Two Factor Required",
+            "default": true
+          },
+          "challenge_token": {
+            "type": "string",
+            "title": "Challenge Token"
+          },
+          "expires_in": {
+            "type": "integer",
+            "title": "Expires In"
+          },
+          "factors": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Factors"
+          }
+        },
+        "type": "object",
+        "required": [
+          "challenge_token",
+          "expires_in"
+        ],
+        "title": "TwoFactorRequiredResponse"
       },
       "UserRead": {
         "properties": {

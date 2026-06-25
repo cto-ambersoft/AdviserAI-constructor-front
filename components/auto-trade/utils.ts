@@ -1,5 +1,6 @@
 import type {
   AutoTradeConfigRead,
+  AutoTradeRiskConfig,
   ExchangeAccountRead,
   StrategyProfileConfig,
   StrategyProfileTPLevel,
@@ -8,13 +9,16 @@ import type {
   AdjustmentSource,
   AutoTradeFormState,
   AutoTradeFormValidation,
+  AutoTradeRiskFormState,
   AutoTradeStrategyProfileFormState,
   AutoTradeTPLevelFormState,
+  ConflictingSignalPolicy,
   SlMode,
   TpMode,
 } from "@/components/auto-trade/types";
 import {
   ADJUSTMENT_SOURCES,
+  DEFAULT_RISK_CONFIG,
   DEFAULT_STRATEGY_PROFILE,
 } from "@/components/auto-trade/types";
 
@@ -196,6 +200,73 @@ function toStrategyProfileForm(
   };
 }
 
+const CONFLICTING_SIGNAL_POLICIES: readonly ConflictingSignalPolicy[] = [
+  "off",
+  "block_opposite",
+];
+
+function toConflictingSignalPolicy(value: unknown): ConflictingSignalPolicy {
+  if (
+    typeof value === "string" &&
+    (CONFLICTING_SIGNAL_POLICIES as readonly string[]).includes(value)
+  ) {
+    return value as ConflictingSignalPolicy;
+  }
+  return DEFAULT_RISK_CONFIG.conflicting_signal_policy;
+}
+
+export function toRiskForm(
+  risk: AutoTradeRiskConfig | null | undefined,
+): AutoTradeRiskFormState {
+  if (!risk) {
+    return { ...DEFAULT_RISK_CONFIG };
+  }
+  return {
+    enabled: toBoolean(risk.enabled, DEFAULT_RISK_CONFIG.enabled),
+    daily_loss_limit_usdt: toNullableNumber(risk.daily_loss_limit_usdt),
+    daily_loss_limit_pct: toNullableNumber(risk.daily_loss_limit_pct),
+    max_open_positions: toNullableNumber(risk.max_open_positions),
+    max_open_positions_per_symbol: toNullableNumber(
+      risk.max_open_positions_per_symbol,
+    ),
+    exposure_cap_usdt: toNullableNumber(risk.exposure_cap_usdt),
+    leverage_ceiling: toNullableNumber(risk.leverage_ceiling),
+    conflicting_signal_policy: toConflictingSignalPolicy(
+      risk.conflicting_signal_policy,
+    ),
+    kpi_guard_enabled: toBoolean(risk.kpi_guard_enabled, false),
+    kpi_guard_max_dd_pct: toNullableNumber(risk.kpi_guard_max_dd_pct),
+    kpi_guard_max_daily_loss_usdt: toNullableNumber(
+      risk.kpi_guard_max_daily_loss_usdt,
+    ),
+    kpi_guard_max_daily_loss_pct: toNullableNumber(
+      risk.kpi_guard_max_daily_loss_pct,
+    ),
+    kpi_guard_min_win_rate_pct: toNullableNumber(
+      risk.kpi_guard_min_win_rate_pct,
+    ),
+    kpi_guard_min_trades: toNullableNumber(risk.kpi_guard_min_trades),
+    kill_switch_enabled: toBoolean(risk.kill_switch_enabled, false),
+    kill_switch_atr_spike_mult: toNullableNumber(
+      risk.kill_switch_atr_spike_mult,
+    ),
+    kill_switch_atr_period: toNullableNumber(risk.kill_switch_atr_period),
+    kill_switch_price_move_pct: toNullableNumber(
+      risk.kill_switch_price_move_pct,
+    ),
+    kill_switch_cooldown_seconds: toNullableNumber(
+      risk.kill_switch_cooldown_seconds,
+    ),
+    anomaly_detection_enabled: toBoolean(risk.anomaly_detection_enabled, false),
+    anomaly_z_threshold: toNullableNumber(risk.anomaly_z_threshold),
+    anomaly_window: toNullableNumber(risk.anomaly_window),
+    promote_min_win_rate_pct: toNullableNumber(risk.promote_min_win_rate_pct),
+    promote_max_dd_pct: toNullableNumber(risk.promote_max_dd_pct),
+    promote_min_trades: toNullableNumber(risk.promote_min_trades),
+    promote_min_sandbox_days: toNullableNumber(risk.promote_min_sandbox_days),
+  };
+}
+
 /**
  * Legacy fields the form still surfaces but the backend no longer persists.
  * Kept as `unknown` for backward-compat with stale config payloads.
@@ -242,6 +313,11 @@ export function toAutoTradeForm(config: AutoTradeConfigRead | null): AutoTradeFo
     bars: legacy.bars ?? 500,
     poll_interval_seconds: legacy.poll_interval_seconds ?? 60,
     strategy_profile: toStrategyProfileForm(strategyProfile),
+    strategy_name: (config as AutoTradeConfigRead & { strategy_name?: string | null })?.strategy_name ?? null,
+    attached_forecast_id:
+      (config as AutoTradeConfigRead & { attached_forecast_id?: string | null })
+        ?.attached_forecast_id ?? null,
+    risk: toRiskForm(config?.risk),
   };
 }
 
@@ -398,6 +474,11 @@ export function getAutoTradeValidation(
     }
   }
 
+  const riskError = validateRiskConfig(form.risk);
+  if (riskError) {
+    return { isValid: false, message: riskError };
+  }
+
   return { isValid: true, message: "" };
 }
 
@@ -478,6 +559,112 @@ function validateStrategyProfile(
   return null;
 }
 
+/**
+ * Bounds check for a nullable risk limit. ``null`` (rule off) always passes.
+ * Mirrors the backend ``AutoTradeRiskConfig`` CheckConstraints so a bad value
+ * is caught client-side before the API returns a 422.
+ */
+function inRange(
+  value: number | null,
+  opts: {
+    min?: number;
+    max?: number;
+    exclusiveMin?: number;
+    integer?: boolean;
+  },
+): boolean {
+  if (value === null) {
+    return true;
+  }
+  if (!Number.isFinite(value)) {
+    return false;
+  }
+  if (opts.integer && !Number.isInteger(value)) {
+    return false;
+  }
+  if (opts.min !== undefined && value < opts.min) {
+    return false;
+  }
+  if (opts.exclusiveMin !== undefined && value <= opts.exclusiveMin) {
+    return false;
+  }
+  if (opts.max !== undefined && value > opts.max) {
+    return false;
+  }
+  return true;
+}
+
+function validateRiskConfig(risk: AutoTradeRiskFormState): string | null {
+  // ── Pre-Trade Risk Engine limits (W8) ──────────────────────────────────
+  if (!inRange(risk.daily_loss_limit_usdt, { min: 0 })) {
+    return "Risk: daily_loss_limit_usdt must be ≥ 0.";
+  }
+  if (!inRange(risk.daily_loss_limit_pct, { exclusiveMin: 0, max: 100 })) {
+    return "Risk: daily_loss_limit_pct must be in (0..100].";
+  }
+  if (!inRange(risk.max_open_positions, { min: 1, integer: true })) {
+    return "Risk: max_open_positions must be an integer ≥ 1.";
+  }
+  if (!inRange(risk.max_open_positions_per_symbol, { min: 1, integer: true })) {
+    return "Risk: max_open_positions_per_symbol must be an integer ≥ 1.";
+  }
+  if (!inRange(risk.exposure_cap_usdt, { exclusiveMin: 0 })) {
+    return "Risk: exposure_cap_usdt must be > 0.";
+  }
+  if (!inRange(risk.leverage_ceiling, { min: 1, max: 125, integer: true })) {
+    return "Risk: leverage_ceiling must be an integer in [1..125].";
+  }
+  // ── KPI-Guard auto-pause thresholds (W9) ───────────────────────────────
+  if (!inRange(risk.kpi_guard_max_dd_pct, { exclusiveMin: 0, max: 100 })) {
+    return "Risk: kpi_guard_max_dd_pct must be in (0..100].";
+  }
+  if (!inRange(risk.kpi_guard_max_daily_loss_usdt, { min: 0 })) {
+    return "Risk: kpi_guard_max_daily_loss_usdt must be ≥ 0.";
+  }
+  if (!inRange(risk.kpi_guard_max_daily_loss_pct, { exclusiveMin: 0, max: 100 })) {
+    return "Risk: kpi_guard_max_daily_loss_pct must be in (0..100].";
+  }
+  if (!inRange(risk.kpi_guard_min_win_rate_pct, { min: 0, max: 100 })) {
+    return "Risk: kpi_guard_min_win_rate_pct must be in [0..100].";
+  }
+  if (!inRange(risk.kpi_guard_min_trades, { min: 1, integer: true })) {
+    return "Risk: kpi_guard_min_trades must be an integer ≥ 1.";
+  }
+  // ── Volatility Kill-Switch params (W9) ─────────────────────────────────
+  if (!inRange(risk.kill_switch_atr_spike_mult, { exclusiveMin: 1 })) {
+    return "Risk: kill_switch_atr_spike_mult must be > 1.";
+  }
+  if (!inRange(risk.kill_switch_atr_period, { min: 2, integer: true })) {
+    return "Risk: kill_switch_atr_period must be an integer ≥ 2.";
+  }
+  if (!inRange(risk.kill_switch_price_move_pct, { exclusiveMin: 0 })) {
+    return "Risk: kill_switch_price_move_pct must be > 0.";
+  }
+  if (!inRange(risk.kill_switch_cooldown_seconds, { min: 0, integer: true })) {
+    return "Risk: kill_switch_cooldown_seconds must be an integer ≥ 0.";
+  }
+  // ── Cross-field: an enabled guard needs ≥1 actionable threshold ────────
+  if (risk.kpi_guard_enabled) {
+    const hasThreshold =
+      risk.kpi_guard_max_dd_pct !== null ||
+      risk.kpi_guard_max_daily_loss_usdt !== null ||
+      risk.kpi_guard_max_daily_loss_pct !== null ||
+      risk.kpi_guard_min_win_rate_pct !== null;
+    if (!hasThreshold) {
+      return "Risk: enable at least one KPI-Guard threshold (max DD, daily loss, or min win-rate) or turn the guard off.";
+    }
+  }
+  if (risk.kill_switch_enabled) {
+    if (
+      risk.kill_switch_atr_spike_mult === null &&
+      risk.kill_switch_price_move_pct === null
+    ) {
+      return "Risk: the kill-switch needs an ATR spike multiplier or a price-move % to trigger, or turn it off.";
+    }
+  }
+  return null;
+}
+
 export function buildStrategyProfilePayload(
   profile: AutoTradeStrategyProfileFormState,
 ): StrategyProfileConfig | null {
@@ -519,6 +706,45 @@ export function buildStrategyProfilePayload(
     adjustment_priority: [...profile.adjustment_priority],
     max_position_pct: profile.max_position_pct,
     allow_sl_widen: profile.allow_sl_widen,
+  };
+}
+
+/**
+ * Serialize the risk form-state into the nested ``risk`` object sent on the
+ * config upsert. Unset (``null``) limits are sent as ``null`` ("rule off") —
+ * never coerced to 0. Always returns an object: ``risk`` is a controlled
+ * section persisted alongside the rest of the config.
+ */
+export function buildRiskConfigPayload(
+  risk: AutoTradeRiskFormState,
+): AutoTradeRiskConfig {
+  return {
+    enabled: risk.enabled,
+    daily_loss_limit_usdt: risk.daily_loss_limit_usdt,
+    daily_loss_limit_pct: risk.daily_loss_limit_pct,
+    max_open_positions: risk.max_open_positions,
+    max_open_positions_per_symbol: risk.max_open_positions_per_symbol,
+    exposure_cap_usdt: risk.exposure_cap_usdt,
+    leverage_ceiling: risk.leverage_ceiling,
+    conflicting_signal_policy: risk.conflicting_signal_policy,
+    kpi_guard_enabled: risk.kpi_guard_enabled,
+    kpi_guard_max_dd_pct: risk.kpi_guard_max_dd_pct,
+    kpi_guard_max_daily_loss_usdt: risk.kpi_guard_max_daily_loss_usdt,
+    kpi_guard_max_daily_loss_pct: risk.kpi_guard_max_daily_loss_pct,
+    kpi_guard_min_win_rate_pct: risk.kpi_guard_min_win_rate_pct,
+    kpi_guard_min_trades: risk.kpi_guard_min_trades,
+    kill_switch_enabled: risk.kill_switch_enabled,
+    kill_switch_atr_spike_mult: risk.kill_switch_atr_spike_mult,
+    kill_switch_atr_period: risk.kill_switch_atr_period,
+    kill_switch_price_move_pct: risk.kill_switch_price_move_pct,
+    kill_switch_cooldown_seconds: risk.kill_switch_cooldown_seconds,
+    anomaly_detection_enabled: risk.anomaly_detection_enabled,
+    anomaly_z_threshold: risk.anomaly_z_threshold,
+    anomaly_window: risk.anomaly_window,
+    promote_min_win_rate_pct: risk.promote_min_win_rate_pct,
+    promote_max_dd_pct: risk.promote_max_dd_pct,
+    promote_min_trades: risk.promote_min_trades,
+    promote_min_sandbox_days: risk.promote_min_sandbox_days,
   };
 }
 

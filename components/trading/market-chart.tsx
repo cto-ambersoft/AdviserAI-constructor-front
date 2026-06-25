@@ -9,18 +9,24 @@ import {
   LineStyle,
   createSeriesMarkers,
   createChart,
+  type IPriceLine,
   type ISeriesApi,
   type ISeriesMarkersPluginApi,
   type SeriesMarker,
   type Time,
   type IChartApi,
 } from "lightweight-charts";
-import type { CandlePoint, OverlayLine } from "@/lib/trading/chart-types";
+import type {
+  CandlePoint,
+  OverlayLine,
+  PriceLineInput,
+} from "@/lib/trading/chart-types";
 
 type MarketChartProps = {
   candles: CandlePoint[];
   overlays?: OverlayLine[];
   markers?: SeriesMarker<Time>[];
+  priceLines?: PriceLineInput[];
   height?: number;
 };
 
@@ -85,12 +91,14 @@ export function MarketChart({
   candles,
   overlays = [],
   markers = [],
+  priceLines = [],
   height = 420,
 }: MarketChartProps) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const chartRef = useRef<IChartApi | null>(null);
   const candleSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const overlaySeriesRef = useRef(new Map<string, ISeriesApi<"Line">>());
+  const priceLinesRef = useRef<IPriceLine[]>([]);
   const markerPluginRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
   const legendPrimaryRef = useRef<HTMLParagraphElement | null>(null);
   const legendSecondaryRef = useRef<HTMLParagraphElement | null>(null);
@@ -292,6 +300,29 @@ export function MarketChart({
       chartRef.current.timeScale().fitContent();
     }
   }, [candles, markers]);
+
+  // Horizontal price lines (e.g. the open position's TP / SL). Few at a time, so
+  // we drop and recreate on change rather than diff. Lines live on the candle
+  // series and survive candle updates.
+  useEffect(() => {
+    const series = candleSeriesRef.current;
+    if (!series) {
+      return;
+    }
+    for (const line of priceLinesRef.current) {
+      series.removePriceLine(line);
+    }
+    priceLinesRef.current = priceLines.map((line) =>
+      series.createPriceLine({
+        price: line.price,
+        color: line.color ?? CHART_COLORS.priceLine,
+        lineWidth: 1,
+        lineStyle: toLineStyle(line.style ?? "dashed"),
+        axisLabelVisible: true,
+        title: line.title ?? "",
+      }),
+    );
+  }, [priceLines]);
 
   useEffect(() => {
     if (!chartRef.current) {

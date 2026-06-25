@@ -69,24 +69,18 @@ export function mapAccountTradesToChartMarkers(
       if (timestamp === null) {
         return null;
       }
+      // One sub-account per strategy: every fill is the strategy's, so the
+      // marker is just BUY/SELL — no auto/manual distinction.
       const isBuy = trade.side.trim().toLowerCase() === "buy";
-      const sourceLabel = trade.is_autotrade ? "AUTO" : "MANUAL";
-      const sideLabel = isBuy ? "BUY" : "SELL";
       const price = Number.isFinite(trade.price) ? trade.price.toFixed(2) : "-";
       return {
         id: `${trade.exchange_trade_id}-${timestamp}-${index}`,
         time: timestamp,
         position: isBuy ? ("belowBar" as const) : ("aboveBar" as const),
         shape: isBuy ? ("arrowUp" as const) : ("arrowDown" as const),
-        color: trade.is_autotrade
-          ? isBuy
-            ? "hsl(161 84% 42%)"
-            : "hsl(350 90% 61%)"
-          : isBuy
-            ? "hsl(201 96% 62%)"
-            : "hsl(24 95% 57%)",
-        text: `${sourceLabel} ${sideLabel} @ ${price}`,
-        size: trade.is_autotrade ? 1.45 : 1.15,
+        color: isBuy ? "hsl(161 84% 42%)" : "hsl(350 90% 61%)",
+        text: `${isBuy ? "BUY" : "SELL"} @ ${price}`,
+        size: 1.3,
       };
     })
     .filter((marker): marker is NonNullable<typeof marker> => marker !== null)

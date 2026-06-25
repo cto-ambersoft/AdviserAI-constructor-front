@@ -5,9 +5,16 @@ import {
   setAccessToken,
 } from "@/lib/auth/token-storage";
 import { normalizeTokenBundle } from "@/lib/auth/token-contract";
+import {
+  getStepUpResolver,
+  isStepUpGated,
+  STEP_UP_HEADER,
+  type StepUpResolver,
+} from "@/lib/api/step-up";
 
 const ERROR_CODE_BY_STATUS: Record<number, string> = {
   401: "unauthorized",
+  403: "forbidden",
   404: "not_found",
   409: "conflict",
   422: "validation_error",
@@ -21,8 +28,16 @@ export class ApiError extends Error {
   data: unknown;
   isTemporary: boolean;
   isRateLimited: boolean;
+  // Seconds from a 429 `Retry-After` header (lockout / SSE stream cap), null when
+  // absent. Consumers use it to drive a countdown that blocks retry input. — M4 §5.
+  retryAfterSeconds: number | null;
 
-  constructor(status: number, data: unknown, message?: string) {
+  constructor(
+    status: number,
+    data: unknown,
+    message?: string,
+    retryAfterSeconds: number | null = null,
+  ) {
     const code = extractErrorCode(status, data);
     super(message ?? formatApiErrorMessage(status, code, data));
     this.status = status;
@@ -31,7 +46,29 @@ export class ApiError extends Error {
     this.isRateLimited = status === 429 || code === "rate_limited";
     this.isTemporary =
       this.isRateLimited || status === 503 || code === "service_unavailable";
+    this.retryAfterSeconds = retryAfterSeconds;
   }
+}
+
+// `Retry-After` is either delta-seconds or an HTTP-date (RFC 9110). Return whole
+// seconds ≥ 0, or null when the header is missing/unparseable.
+export function parseRetryAfter(response: Response): number | null {
+  const raw = response.headers.get("retry-after");
+  if (!raw) {
+    return null;
+  }
+
+  const asSeconds = Number(raw);
+  if (Number.isFinite(asSeconds)) {
+    return Math.max(0, Math.round(asSeconds));
+  }
+
+  const asDate = Date.parse(raw);
+  if (!Number.isNaN(asDate)) {
+    return Math.max(0, Math.round((asDate - Date.now()) / 1000));
+  }
+
+  return null;
 }
 
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
@@ -79,6 +116,9 @@ type RequestOptions = {
   body?: unknown;
   skipAuthRefresh?: boolean;
   signal?: AbortSignal;
+  // Extra request headers (e.g. `X-Step-Up-Token` on gated actions). Merged after
+  // the base auth/content-type headers so a caller can add — not clobber — them.
+  headers?: Record<string, string>;
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -104,6 +144,7 @@ function shouldSkipRefresh(path: string): boolean {
     normalized === "/api/auth/refresh" ||
     normalized === "/api/auth/signin" ||
     normalized === "/api/auth/signup" ||
+    normalized === "/api/auth/2fa/login" ||
     normalized === "/api/auth/logout"
   );
 }
@@ -177,6 +218,7 @@ async function performRequest(
   body: unknown,
   token: string | null,
   signal?: AbortSignal,
+  extraHeaders?: Record<string, string>,
 ): Promise<Response> {
   const credentials: RequestCredentials = url.startsWith("/")
     ? "same-origin"
@@ -184,12 +226,79 @@ async function performRequest(
 
   return fetch(url, {
     method,
-    headers: buildRequestHeaders(token, body !== undefined),
+    headers: {
+      ...buildRequestHeaders(token, body !== undefined),
+      ...extraHeaders,
+    },
     body: body === undefined ? undefined : JSON.stringify(body),
     cache: "no-store",
     credentials,
     signal,
   });
+}
+
+// A gated 403 means 2FA is on and a fresh one-time X-Step-Up-Token is required.
+// Prompt for a code (resolver), mint a token, and retry the SAME request with the
+// header. Bounded so a spent/expired token re-mints at most once; cancel (or a
+// non-403 retry failure) surfaces the last error. — §1.
+const MAX_STEP_UP_ATTEMPTS = 2;
+
+async function runStepUpRetry<T>(params: {
+  resolver: StepUpResolver;
+  method: RequestOptions["method"];
+  url: string;
+  body: unknown;
+  token: string | null;
+  signal: AbortSignal | undefined;
+  headers: Record<string, string> | undefined;
+  initialResponse: Response;
+  initialPayload: unknown;
+}): Promise<T> {
+  const { resolver, method, url, body, token, signal, headers } = params;
+  let lastResponse = params.initialResponse;
+  let lastPayload = params.initialPayload;
+
+  for (let attempt = 0; attempt < MAX_STEP_UP_ATTEMPTS; attempt += 1) {
+    const stepUpToken = await resolver();
+    if (!stepUpToken) {
+      break; // user cancelled — fall through to throw the last error
+    }
+    const retriedResponse = await performRequest(method, url, body, token, signal, {
+      ...headers,
+      [STEP_UP_HEADER]: stepUpToken,
+    });
+    const retriedPayload = await parseResponsePayload(retriedResponse);
+    if (retriedResponse.ok) {
+      return retriedPayload as T;
+    }
+    lastResponse = retriedResponse;
+    lastPayload = retriedPayload;
+    // Only a fresh 403 (token spent/expired/foreign) is worth re-minting; any
+    // other failure (e.g. 422) is a real error — surface it.
+    if (retriedResponse.status !== 403) {
+      break;
+    }
+  }
+
+  throw new ApiError(
+    lastResponse.status,
+    lastPayload,
+    getResponseErrorMessage(lastResponse.status, lastPayload),
+    parseRetryAfter(lastResponse),
+  );
+}
+
+function shouldRunStepUp(
+  status: number,
+  method: RequestOptions["method"],
+  normalizedPath: string,
+  resolver: StepUpResolver | null,
+): resolver is StepUpResolver {
+  return (
+    status === 403 &&
+    resolver !== null &&
+    isStepUpGated(method ?? "GET", normalizedPath)
+  );
 }
 
 export async function apiRequest<T>(
@@ -202,6 +311,7 @@ export async function apiRequest<T>(
     body,
     skipAuthRefresh = false,
     signal,
+    headers,
   } = options;
   const normalizedPath = normalizePath(path);
   const requestPath = withQuery(normalizedPath, query);
@@ -210,7 +320,14 @@ export async function apiRequest<T>(
     : `${getApiBaseUrl()}${requestPath}`;
   const token = getAccessToken();
 
-  const response = await performRequest(method, url, body, token, signal);
+  const response = await performRequest(
+    method,
+    url,
+    body,
+    token,
+    signal,
+    headers,
+  );
   const payload = await parseResponsePayload(response);
 
   if (response.ok) {
@@ -230,6 +347,7 @@ export async function apiRequest<T>(
         body,
         freshAccessToken,
         signal,
+        headers,
       );
       const retryPayload = await parseResponsePayload(retriedResponse);
 
@@ -237,19 +355,68 @@ export async function apiRequest<T>(
         return retryPayload as T;
       }
 
+      // First gated action on a freshly-refreshed session can surface the
+      // step-up 403 here rather than on the initial response.
+      const resolverAfterRefresh = getStepUpResolver();
+      if (
+        shouldRunStepUp(
+          retriedResponse.status,
+          method,
+          normalizedPath,
+          resolverAfterRefresh,
+        )
+      ) {
+        return runStepUpRetry<T>({
+          resolver: resolverAfterRefresh,
+          method,
+          url,
+          body,
+          token: freshAccessToken,
+          signal,
+          headers,
+          initialResponse: retriedResponse,
+          initialPayload: retryPayload,
+        });
+      }
+
       const message = getResponseErrorMessage(
         retriedResponse.status,
         retryPayload,
       );
-      throw new ApiError(retriedResponse.status, retryPayload, message);
+      throw new ApiError(
+        retriedResponse.status,
+        retryPayload,
+        message,
+        parseRetryAfter(retriedResponse),
+      );
     }
 
     clearAccessToken();
     redirectToLogin();
   }
 
+  const stepUpResolver = getStepUpResolver();
+  if (shouldRunStepUp(response.status, method, normalizedPath, stepUpResolver)) {
+    return runStepUpRetry<T>({
+      resolver: stepUpResolver,
+      method,
+      url,
+      body,
+      token,
+      signal,
+      headers,
+      initialResponse: response,
+      initialPayload: payload,
+    });
+  }
+
   const message = getResponseErrorMessage(response.status, payload);
-  throw new ApiError(response.status, payload, message);
+  throw new ApiError(
+    response.status,
+    payload,
+    message,
+    parseRetryAfter(response),
+  );
 }
 
 function isFrontendProxyPath(path: string) {

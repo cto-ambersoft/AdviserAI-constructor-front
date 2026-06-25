@@ -1265,7 +1265,7 @@ export function CexDashboard({ mode = "full" }: { mode?: "full" | "trade" }) {
                       className={INPUT_CLASS}
                       value={symbol}
                       onChange={(event) => setSymbol(event.target.value)}
-                      placeholder={marketMeta?.default_symbol ?? "BTC/USDT"}
+                      placeholder={marketMeta?.default_symbol ?? "BTC/USDT or ETH/USDT"}
                     />
                     <select
                       className={INPUT_CLASS}

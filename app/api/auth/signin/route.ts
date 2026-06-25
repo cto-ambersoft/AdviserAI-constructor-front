@@ -33,6 +33,12 @@ export async function POST(request: Request) {
     return NextResponse.json(responseBody, { status: backendResponse.status });
   }
 
+  // Login-2FA (§1b): a 2FA-enabled user gets a challenge instead of tokens. Pass
+  // it through unchanged and set NO cookies — login finishes via /api/auth/2fa/login.
+  if (isTwoFactorRequired(responseBody)) {
+    return NextResponse.json(responseBody, { status: 200 });
+  }
+
   const tokens = normalizeTokenBundle(responseBody);
   if (!tokens) {
     return NextResponse.json({ detail: "Invalid token payload from backend" }, { status: 502 });
@@ -41,4 +47,12 @@ export async function POST(request: Request) {
   const response = NextResponse.json(tokens, { status: 200 });
   setSessionCookies(response, tokens);
   return response;
+}
+
+function isTwoFactorRequired(payload: unknown): boolean {
+  return (
+    typeof payload === "object" &&
+    payload !== null &&
+    (payload as { two_factor_required?: unknown }).two_factor_required === true
+  );
 }

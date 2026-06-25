@@ -1433,6 +1433,46 @@ export function TradingDashboard() {
     setBuilderForm,
   ]);
 
+  // F3 deep-link — arriving from the Forecast Catalogue ("Use in strategy"):
+  // preselect that forecast in the builder and enable AI. Read once on mount
+  // from the URL (avoids useSearchParams' Suspense constraint), then re-applied
+  // if a late strategy-load resets the form, until it sticks. — M4 §6.
+  const [pendingForecastFile, setPendingForecastFile] = useState<string | null>(
+    null,
+  );
+  useEffect(() => {
+    const forecast = new URLSearchParams(window.location.search).get("forecast");
+    if (!forecast) {
+      return;
+    }
+    setPendingForecastFile(forecast);
+    const url = new URL(window.location.href);
+    url.searchParams.delete("forecast");
+    window.history.replaceState({}, "", url.toString());
+  }, []);
+  useEffect(() => {
+    if (!pendingForecastFile) {
+      return;
+    }
+    if (
+      builderForm.run_with_ai &&
+      builderForm.ai_forecast_file === pendingForecastFile
+    ) {
+      setPendingForecastFile(null); // applied and stuck
+      return;
+    }
+    setBuilderForm((current) => ({
+      ...current,
+      run_with_ai: true,
+      ai_forecast_file: pendingForecastFile,
+    }));
+  }, [
+    pendingForecastFile,
+    builderForm.run_with_ai,
+    builderForm.ai_forecast_file,
+    setBuilderForm,
+  ]);
+
   useEffect(() => {
     if (livePaperSource !== "builtin") {
       return;
@@ -3083,7 +3123,7 @@ export function TradingDashboard() {
             >
               {(marketMeta?.symbols.length
                 ? marketMeta.symbols
-                : ["BTC/USDT"]
+                : ["BTC/USDT", "ETH/USDT"]
               ).map((item) => (
                 <option key={item} value={item}>
                   {item}
@@ -3239,8 +3279,8 @@ export function TradingDashboard() {
                 latestBacktestIncludeSeries === false &&
                 marketChartCandles.length === 0 ? (
                   <p className="rounded-md border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 md:text-sm">
-                    `include_series=false`: chart series were intentionally skipped by
-                    backend. Summary and trades remain available.
+                    Chart series were skipped for this run. Summary and trades are
+                    still available below.
                   </p>
                 ) : null}
                 <p className="text-xs text-muted-foreground md:text-sm">
