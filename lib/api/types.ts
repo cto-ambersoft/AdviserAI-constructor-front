@@ -568,6 +568,7 @@ export type PersonalAnalysisProfileCreate = {
   agents?: PersonalAgentFlags | null;
   agent_weights?: PersonalAgentWeights | null;
   interval_minutes?: number;
+  debate_enabled?: boolean | null;
 };
 
 export type PersonalAnalysisProfileUpdate = {
@@ -577,6 +578,7 @@ export type PersonalAnalysisProfileUpdate = {
   agent_weights?: PersonalAgentWeights | null;
   interval_minutes?: number | null;
   is_active?: boolean | null;
+  debate_enabled?: boolean | null;
 };
 
 export type PersonalAnalysisProfileRead = {
@@ -588,6 +590,7 @@ export type PersonalAnalysisProfileRead = {
   agent_weights: PersonalAgentWeights;
   interval_minutes: number;
   is_active: boolean;
+  debate_enabled: boolean | null;
   next_run_at: string;
   last_triggered_at: string | null;
   last_completed_at: string | null;
@@ -599,6 +602,7 @@ export type PersonalAnalysisManualTriggerRequest = {
   query_prompt?: string | null;
   agents?: PersonalAgentFlags | null;
   agent_weights?: PersonalAgentWeights | null;
+  debate_enabled?: boolean | null;
 };
 
 export type PersonalAnalysisManualTriggerResponse = {

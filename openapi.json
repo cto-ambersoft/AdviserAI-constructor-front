@@ -1295,6 +1295,62 @@
         ]
       }
     },
+    "/api/v1/backtest/metrics-schema": {
+      "get": {
+        "tags": [
+          "backtest"
+        ],
+        "summary": "Get metric formula definition + version (Finding 7.3 reproducibility)",
+        "operationId": "get_metric_formula_definition_api_v1_backtest_metrics_schema_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "version",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Version"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Metric Formula Definition Api V1 Backtest Metrics Schema Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/backtest/catalog": {
       "get": {
         "tags": [
@@ -2671,6 +2727,144 @@
             }
           }
         },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AutoTradeConfigRead"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/risk-config/apply-all": {
+      "patch": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Apply one risk config to all of the user's strategies (step-up required)",
+        "operationId": "apply_risk_config_to_all_strategies_api_v1_live_auto_trade_risk_config_apply_all_patch",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AutoTradeRiskConfig"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RiskConfigBulkApplyResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/live/auto-trade/config/{config_id}/rollback/{revision_id}": {
+      "post": {
+        "tags": [
+          "live"
+        ],
+        "summary": "Roll a strategy config back to a prior revision (step-up required)",
+        "operationId": "rollback_auto_trade_config_api_v1_live_auto_trade_config__config_id__rollback__revision_id__post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Config Id"
+            }
+          },
+          {
+            "name": "revision_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "title": "Revision Id"
+            }
+          },
+          {
+            "name": "X-Step-Up-Token",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Step-Up-Token"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "Successful Response",
@@ -7019,6 +7213,27 @@
             "title": "Trades Limit",
             "default": 1000
           },
+          "fee_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Fee Pct",
+            "default": 0.06
+          },
+          "slippage_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Slippage Pct",
+            "default": 0.0
+          },
+          "funding_pct_per_bar": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Funding Pct Per Bar",
+            "default": 0.0
+          },
           "ema_period": {
             "type": "integer",
             "title": "Ema Period",
@@ -7557,6 +7772,34 @@
               }
             ],
             "title": "Last Stopped At"
+          },
+          "risk_off_latched": {
+            "type": "boolean",
+            "title": "Risk Off Latched",
+            "default": false
+          },
+          "risk_off_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Off Reason"
+          },
+          "risk_off_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Risk Off At"
           },
           "created_at": {
             "type": "string",
@@ -9027,6 +9270,18 @@
             "items": {},
             "type": "array",
             "title": "Explanations"
+          },
+          "run_manifest": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Run Manifest"
           }
         },
         "type": "object",
@@ -9778,6 +10033,27 @@
             "title": "Trades Limit",
             "default": 1000
           },
+          "fee_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Fee Pct",
+            "default": 0.06
+          },
+          "slippage_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Slippage Pct",
+            "default": 0.0
+          },
+          "funding_pct_per_bar": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Funding Pct Per Bar",
+            "default": 0.0
+          },
           "ma_period": {
             "type": "integer",
             "title": "Ma Period",
@@ -10095,6 +10371,27 @@
             "title": "Trades Limit",
             "default": 1000
           },
+          "fee_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Fee Pct",
+            "default": 0.06
+          },
+          "slippage_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Slippage Pct",
+            "default": 0.0
+          },
+          "funding_pct_per_bar": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Funding Pct Per Bar",
+            "default": 0.0
+          },
           "lookback": {
             "type": "integer",
             "title": "Lookback",
@@ -10149,11 +10446,6 @@
             "type": "integer",
             "title": "Max Positions",
             "default": 1
-          },
-          "fee_pct": {
-            "type": "number",
-            "title": "Fee Pct",
-            "default": 0.06
           },
           "entry_size_usdt": {
             "anyOf": [
@@ -10355,6 +10647,27 @@
             "minimum": 10.0,
             "title": "Trades Limit",
             "default": 1000
+          },
+          "fee_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Fee Pct",
+            "default": 0.06
+          },
+          "slippage_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Slippage Pct",
+            "default": 0.0
+          },
+          "funding_pct_per_bar": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Funding Pct Per Bar",
+            "default": 0.0
           },
           "side": {
             "type": "string",
@@ -11208,6 +11521,17 @@
               }
             ],
             "title": "Agent Weights"
+          },
+          "debate_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debate Enabled"
           }
         },
         "type": "object",
@@ -11296,6 +11620,17 @@
             "minimum": 5.0,
             "title": "Interval Minutes",
             "default": 60
+          },
+          "debate_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debate Enabled"
           }
         },
         "type": "object",
@@ -11351,6 +11686,17 @@
             "type": "boolean",
             "title": "Is Active"
           },
+          "debate_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debate Enabled"
+          },
           "next_run_at": {
             "type": "string",
             "format": "date-time",
@@ -11401,6 +11747,7 @@
           "agent_weights",
           "interval_minutes",
           "is_active",
+          "debate_enabled",
           "next_run_at",
           "last_triggered_at",
           "last_completed_at",
@@ -11487,6 +11834,17 @@
               }
             ],
             "title": "Is Active"
+          },
+          "debate_enabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Debate Enabled"
           }
         },
         "type": "object",
@@ -11975,6 +12333,20 @@
           "refresh_token"
         ],
         "title": "RefreshTokenRequest"
+      },
+      "RiskConfigBulkApplyResponse": {
+        "properties": {
+          "updated_count": {
+            "type": "integer",
+            "title": "Updated Count"
+          }
+        },
+        "type": "object",
+        "required": [
+          "updated_count"
+        ],
+        "title": "RiskConfigBulkApplyResponse",
+        "description": "Result of applying one risk config to all of a user's strategies (A2)."
       },
       "SignInRequest": {
         "properties": {
@@ -13410,6 +13782,27 @@
             "minimum": 10.0,
             "title": "Trades Limit",
             "default": 1000
+          },
+          "fee_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Fee Pct",
+            "default": 0.06
+          },
+          "slippage_pct": {
+            "type": "number",
+            "maximum": 5.0,
+            "minimum": 0.0,
+            "title": "Slippage Pct",
+            "default": 0.0
+          },
+          "funding_pct_per_bar": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Funding Pct Per Bar",
+            "default": 0.0
           },
           "regime": {
             "type": "string",

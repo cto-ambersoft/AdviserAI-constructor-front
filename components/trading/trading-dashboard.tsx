@@ -131,6 +131,8 @@ import {
   type VwapBacktestResponse,
 } from "@/lib/api";
 import type { CandlePoint, OverlayLine } from "@/lib/trading/chart-types";
+import { DEFAULT_BACKTEST_COSTS } from "@/lib/trading/backtest-costs";
+import { summarizeDebate } from "@/lib/trading/debate";
 import {
   mapBacktestToMarkers,
   mapBacktestToOverlays,
@@ -211,6 +213,7 @@ type PersonalProfileFormState = {
   symbol: string;
   queryPrompt: string;
   intervalMinutes: number;
+  debateEnabled: boolean;
   agents: PersonalAgentFlags;
   agentWeights: PersonalAgentWeights;
 };
@@ -331,6 +334,7 @@ function createEmptyPersonalProfileForm(symbol: string): PersonalProfileFormStat
     symbol,
     queryPrompt: "",
     intervalMinutes: 60,
+    debateEnabled: false,
     agents: {},
     agentWeights: {},
   };
@@ -350,6 +354,7 @@ function toPersonalProfileForm(
     symbol: profile?.symbol ?? symbol,
     queryPrompt: profile?.query_prompt ?? "",
     intervalMinutes: profile?.interval_minutes ?? 60,
+    debateEnabled: profile?.debate_enabled ?? false,
     agents: {
       ...baseAgents,
       ...profileAgents,
@@ -838,6 +843,7 @@ export function TradingDashboard() {
     ob_impulse_atr: 1.5,
     ob_buffer_atr: 0.15,
     ob_lookback: 120,
+    ...DEFAULT_BACKTEST_COSTS,
     run_with_ai: false,
     ai_forecast_file: null,
     ai_bull_confidence_threshold: null,
@@ -1679,6 +1685,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       async () => {
         return runVwapBacktest({
+          ...DEFAULT_BACKTEST_COSTS,
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
@@ -1878,6 +1885,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runAtrOrderBlockBacktest({
+          ...DEFAULT_BACKTEST_COSTS,
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
@@ -1903,6 +1911,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runKnifeCatcherBacktest({
+          ...DEFAULT_BACKTEST_COSTS,
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
@@ -1921,6 +1930,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runGridBotBacktest({
+          ...DEFAULT_BACKTEST_COSTS,
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
@@ -1940,6 +1950,7 @@ export function TradingDashboard() {
     await runBacktestSafely(
       () =>
         runIntradayMomentumBacktest({
+          ...DEFAULT_BACKTEST_COSTS,
           exchange_name: marketExchangeName,
           symbol,
           timeframe,
@@ -2569,6 +2580,7 @@ export function TradingDashboard() {
         agents: personalProfileForm.agents,
         agent_weights: personalProfileForm.agentWeights,
         interval_minutes: Math.round(personalProfileForm.intervalMinutes),
+        debate_enabled: personalProfileForm.debateEnabled,
       };
       if (!payload.symbol) {
         setErrorMessage("Symbol is required.");
@@ -5526,6 +5538,10 @@ function AnalysisTab({
       extractPersonalAnalysisPayload(selectedPersonalHistory?.analysis_data ?? null),
     [selectedPersonalHistory?.analysis_data],
   );
+  const selectedPersonalDebate = useMemo(
+    () => summarizeDebate(selectedPersonalPayload.analysisStructured),
+    [selectedPersonalPayload.analysisStructured],
+  );
   const selectedPersonalRun = useMemo(
     () =>
       toPseudoAnalysisRun({
@@ -5730,6 +5746,27 @@ function AnalysisTab({
               />
             </div>
 
+            <label className="flex items-start gap-2 rounded-md border border-border/70 bg-background/40 p-3 text-sm">
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={personalProfileForm.debateEnabled}
+                onChange={(event) =>
+                  onPersonalProfileFormChange({
+                    ...personalProfileForm,
+                    debateEnabled: event.target.checked,
+                  })
+                }
+              />
+              <span>
+                <span className="font-medium">Enable decision debate</span>
+                <span className="block text-xs text-muted-foreground">
+                  Run an adversarial bull/bear (+ risk team) review on the final
+                  forecast. Off by default; adds latency and model cost.
+                </span>
+              </span>
+            </label>
+
             <div className="space-y-2 rounded-md border border-border/70 bg-background/40 p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Agents & weights ({personalEnabledAgents} enabled)
@@ -5864,6 +5901,33 @@ function AnalysisTab({
                         selectedPersonalHistory.updated_at,
                     )}
                   </p>
+                  {selectedPersonalDebate ? (
+                    <div className="space-y-1 rounded-md border border-violet-500/30 bg-violet-500/5 p-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Badge variant="outline" className="bg-violet-500/10">
+                          Debate: {selectedPersonalDebate.winner || "—"}
+                        </Badge>
+                        {selectedPersonalDebate.actionChanged ? (
+                          <Badge variant="outline">Action changed</Badge>
+                        ) : null}
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {selectedPersonalDebate.topology} ·{" "}
+                        {selectedPersonalDebate.rounds} directional round
+                        {selectedPersonalDebate.rounds === 1 ? "" : "s"}
+                        {selectedPersonalDebate.riskRounds !== null
+                          ? ` · ${selectedPersonalDebate.riskRounds} risk round${
+                              selectedPersonalDebate.riskRounds === 1 ? "" : "s"
+                            }`
+                          : ""}
+                        {" · "}
+                        {selectedPersonalDebate.terminationReason || "—"}
+                        {" · Δconf "}
+                        {selectedPersonalDebate.confidenceDelta >= 0 ? "+" : ""}
+                        {Math.round(selectedPersonalDebate.confidenceDelta * 100)}%
+                      </p>
+                    </div>
+                  ) : null}
                   <AiTrendHint trendExtraction={selectedPersonalPayload.trendExtraction} />
                   <AiLevelsHint
                     trendExtraction={selectedPersonalPayload.trendExtraction}

@@ -12,6 +12,7 @@ import type {
 } from "@/components/auto-trade/launch-wizard/state";
 import { ApiError, runAtrOrderBlockBacktest } from "@/lib/api";
 import type { PersonalAnalysisProfileRead } from "@/lib/api";
+import { DEFAULT_BACKTEST_COSTS } from "@/lib/trading/backtest-costs";
 import { notifyError } from "@/lib/notifications";
 
 function fmt(value: number | null, suffix = "") {
@@ -49,6 +50,7 @@ export function BacktestStep({
       // Quick validation run with conservative ATR Order-Block defaults; the
       // dashboard owns full parameter tuning.
       const result = await runAtrOrderBlockBacktest({
+        ...DEFAULT_BACKTEST_COSTS,
         exchange_name: "bybit",
         symbol,
         timeframe: "1h",

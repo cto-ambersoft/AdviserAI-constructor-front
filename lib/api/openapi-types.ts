@@ -555,6 +555,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/backtest/metrics-schema": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get metric formula definition + version (Finding 7.3 reproducibility) */
+        get: operations["get_metric_formula_definition_api_v1_backtest_metrics_schema_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/backtest/catalog": {
         parameters: {
             query?: never;
@@ -994,6 +1011,40 @@ export interface paths {
         /** Create or update auto-trade config */
         put: operations["upsert_auto_trade_config_api_v1_live_auto_trade_config_put"];
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/risk-config/apply-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Apply one risk config to all of the user's strategies (step-up required) */
+        patch: operations["apply_risk_config_to_all_strategies_api_v1_live_auto_trade_risk_config_apply_all_patch"];
+        trace?: never;
+    };
+    "/api/v1/live/auto-trade/config/{config_id}/rollback/{revision_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Roll a strategy config back to a prior revision (step-up required) */
+        post: operations["rollback_auto_trade_config_api_v1_live_auto_trade_config__config_id__rollback__revision_id__post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2540,6 +2591,21 @@ export interface components {
              */
             trades_limit: number;
             /**
+             * Fee Pct
+             * @default 0.06
+             */
+            fee_pct: number;
+            /**
+             * Slippage Pct
+             * @default 0
+             */
+            slippage_pct: number;
+            /**
+             * Funding Pct Per Bar
+             * @default 0
+             */
+            funding_pct_per_bar: number;
+            /**
              * Ema Period
              * @default 50
              */
@@ -2782,6 +2848,15 @@ export interface components {
             last_started_at: string | null;
             /** Last Stopped At */
             last_stopped_at: string | null;
+            /**
+             * Risk Off Latched
+             * @default false
+             */
+            risk_off_latched: boolean;
+            /** Risk Off Reason */
+            risk_off_reason?: string | null;
+            /** Risk Off At */
+            risk_off_at?: string | null;
             /**
              * Created At
              * Format: date-time
@@ -3259,6 +3334,10 @@ export interface components {
             };
             /** Explanations */
             explanations: unknown[];
+            /** Run Manifest */
+            run_manifest?: {
+                [key: string]: unknown;
+            } | null;
         };
         /** BuilderSignalRequest */
         BuilderSignalRequest: {
@@ -3578,6 +3657,21 @@ export interface components {
              */
             trades_limit: number;
             /**
+             * Fee Pct
+             * @default 0.06
+             */
+            fee_pct: number;
+            /**
+             * Slippage Pct
+             * @default 0
+             */
+            slippage_pct: number;
+            /**
+             * Funding Pct Per Bar
+             * @default 0
+             */
+            funding_pct_per_bar: number;
+            /**
              * Ma Period
              * @default 50
              */
@@ -3731,6 +3825,21 @@ export interface components {
              */
             trades_limit: number;
             /**
+             * Fee Pct
+             * @default 0.06
+             */
+            fee_pct: number;
+            /**
+             * Slippage Pct
+             * @default 0
+             */
+            slippage_pct: number;
+            /**
+             * Funding Pct Per Bar
+             * @default 0
+             */
+            funding_pct_per_bar: number;
+            /**
              * Lookback
              * @default 20
              */
@@ -3785,11 +3894,6 @@ export interface components {
              * @default 1
              */
             max_positions: number;
-            /**
-             * Fee Pct
-             * @default 0.06
-             */
-            fee_pct: number;
             /** Entry Size Usdt */
             entry_size_usdt?: number | null;
             /**
@@ -3871,6 +3975,21 @@ export interface components {
              * @default 1000
              */
             trades_limit: number;
+            /**
+             * Fee Pct
+             * @default 0.06
+             */
+            fee_pct: number;
+            /**
+             * Slippage Pct
+             * @default 0
+             */
+            slippage_pct: number;
+            /**
+             * Funding Pct Per Bar
+             * @default 0
+             */
+            funding_pct_per_bar: number;
             /**
              * Side
              * @default long
@@ -4254,6 +4373,8 @@ export interface components {
             agent_weights?: {
                 [key: string]: number;
             } | null;
+            /** Debate Enabled */
+            debate_enabled?: boolean | null;
         };
         /** PersonalAnalysisManualTriggerResponse */
         PersonalAnalysisManualTriggerResponse: {
@@ -4288,6 +4409,8 @@ export interface components {
              * @default 60
              */
             interval_minutes: number;
+            /** Debate Enabled */
+            debate_enabled?: boolean | null;
         };
         /** PersonalAnalysisProfileRead */
         PersonalAnalysisProfileRead: {
@@ -4311,6 +4434,8 @@ export interface components {
             interval_minutes: number;
             /** Is Active */
             is_active: boolean;
+            /** Debate Enabled */
+            debate_enabled: boolean | null;
             /**
              * Next Run At
              * Format: date-time
@@ -4349,6 +4474,8 @@ export interface components {
             interval_minutes?: number | null;
             /** Is Active */
             is_active?: boolean | null;
+            /** Debate Enabled */
+            debate_enabled?: boolean | null;
         };
         /** PortfolioBacktestRequest */
         PortfolioBacktestRequest: {
@@ -4539,6 +4666,14 @@ export interface components {
         RefreshTokenRequest: {
             /** Refresh Token */
             refresh_token: string;
+        };
+        /**
+         * RiskConfigBulkApplyResponse
+         * @description Result of applying one risk config to all of a user's strategies (A2).
+         */
+        RiskConfigBulkApplyResponse: {
+            /** Updated Count */
+            updated_count: number;
         };
         /** SignInRequest */
         SignInRequest: {
@@ -5136,6 +5271,21 @@ export interface components {
              * @default 1000
              */
             trades_limit: number;
+            /**
+             * Fee Pct
+             * @default 0.06
+             */
+            fee_pct: number;
+            /**
+             * Slippage Pct
+             * @default 0
+             */
+            slippage_pct: number;
+            /**
+             * Funding Pct Per Bar
+             * @default 0
+             */
+            funding_pct_per_bar: number;
             /**
              * Regime
              * @default Flat
@@ -6144,6 +6294,39 @@ export interface operations {
             };
         };
     };
+    get_metric_formula_definition_api_v1_backtest_metrics_schema_get: {
+        parameters: {
+            query?: {
+                version?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_backtest_catalog_api_v1_backtest_catalog_get: {
         parameters: {
             query?: never;
@@ -6982,6 +7165,75 @@ export interface operations {
                 "application/json": components["schemas"]["AutoTradeConfigUpsertRequest"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AutoTradeConfigRead"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    apply_risk_config_to_all_strategies_api_v1_live_auto_trade_risk_config_apply_all_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AutoTradeRiskConfig"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RiskConfigBulkApplyResponse"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rollback_auto_trade_config_api_v1_live_auto_trade_config__config_id__rollback__revision_id__post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "X-Step-Up-Token"?: string | null;
+            };
+            path: {
+                config_id: number;
+                revision_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
