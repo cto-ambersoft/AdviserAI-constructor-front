@@ -44,6 +44,8 @@ import {
 } from "@/components/trading/form-controls";
 import { MarketChart } from "@/components/trading/market-chart";
 import { EquityCurveChart } from "@/components/trading/equity-curve-chart";
+import { OaCalibrationPanel } from "@/components/oa/oa-calibration-panel";
+import { OaDecisionBadge } from "@/components/oa/oa-signal-badge";
 import {
   AtrStrategyForm,
   GridStrategyForm,
@@ -120,6 +122,7 @@ import {
   type PersonalAnalysisDefaultsRead,
   type PersonalAnalysisHistoryRead,
   type PersonalAnalysisJobRead,
+  type PersonalAnalysisProfileCreate,
   type PersonalAnalysisProfileRead,
   type SignalExecuteRequest,
   type StrategyCreate,
@@ -214,6 +217,7 @@ type PersonalProfileFormState = {
   queryPrompt: string;
   intervalMinutes: number;
   debateEnabled: boolean;
+  oaEnabled: boolean;
   agents: PersonalAgentFlags;
   agentWeights: PersonalAgentWeights;
 };
@@ -328,6 +332,13 @@ function mergeUniqueById<T extends { id: number }>(current: T[], incoming: T[]) 
   return [...current, ...additions];
 }
 
+// Global Outcome-Aware kill-switch mirrored to the client. COSMETIC ONLY: it just
+// makes the per-profile toggle non-interactive. The real gate lives in core
+// (OA_FEATURE_ENABLED). A profile already persisted with oa_enabled=true keeps
+// sending oa_enabled:true even when this is off — core's flag neutralizes it
+// regardless. Build-time inlined, so flipping it requires a front rebuild/redeploy.
+const OA_FEATURE_ENABLED = process.env.NEXT_PUBLIC_OA_ENABLED === "true";
+
 function createEmptyPersonalProfileForm(symbol: string): PersonalProfileFormState {
   return {
     id: null,
@@ -335,12 +346,28 @@ function createEmptyPersonalProfileForm(symbol: string): PersonalProfileFormStat
     queryPrompt: "",
     intervalMinutes: 60,
     debateEnabled: false,
+    oaEnabled: false,
     agents: {},
     agentWeights: {},
   };
 }
 
-function toPersonalProfileForm(
+// Pure form → API payload mapping (exported for unit testing the field wiring).
+export function buildPersonalProfilePayload(
+  form: PersonalProfileFormState,
+): PersonalAnalysisProfileCreate {
+  return {
+    symbol: form.symbol.trim(),
+    query_prompt: form.queryPrompt.trim() || null,
+    agents: form.agents,
+    agent_weights: form.agentWeights,
+    interval_minutes: Math.round(form.intervalMinutes),
+    debate_enabled: form.debateEnabled,
+    oa_enabled: form.oaEnabled,
+  };
+}
+
+export function toPersonalProfileForm(
   defaults: PersonalAnalysisDefaultsRead | null,
   profile: PersonalAnalysisProfileRead | null,
   symbol: string,
@@ -355,6 +382,7 @@ function toPersonalProfileForm(
     queryPrompt: profile?.query_prompt ?? "",
     intervalMinutes: profile?.interval_minutes ?? 60,
     debateEnabled: profile?.debate_enabled ?? false,
+    oaEnabled: profile?.oa_enabled ?? false,
     agents: {
       ...baseAgents,
       ...profileAgents,
@@ -2574,14 +2602,7 @@ export function TradingDashboard() {
     setInfoMessage("");
     setIsPersonalSavePending(true);
     try {
-      const payload = {
-        symbol: personalProfileForm.symbol.trim(),
-        query_prompt: personalProfileForm.queryPrompt.trim() || null,
-        agents: personalProfileForm.agents,
-        agent_weights: personalProfileForm.agentWeights,
-        interval_minutes: Math.round(personalProfileForm.intervalMinutes),
-        debate_enabled: personalProfileForm.debateEnabled,
-      };
+      const payload = buildPersonalProfilePayload(personalProfileForm);
       if (!payload.symbol) {
         setErrorMessage("Symbol is required.");
         return;
@@ -5767,6 +5788,43 @@ function AnalysisTab({
               </span>
             </label>
 
+            <label
+              className="flex items-start gap-2 rounded-md border border-border/70 bg-background/40 p-3 text-sm"
+              title={
+                OA_FEATURE_ENABLED
+                  ? undefined
+                  : "Outcome-Aware is disabled on the server (OA_FEATURE_ENABLED is off)."
+              }
+            >
+              <input
+                type="checkbox"
+                className="mt-0.5"
+                checked={personalProfileForm.oaEnabled}
+                disabled={!OA_FEATURE_ENABLED}
+                onChange={(event) =>
+                  onPersonalProfileFormChange({
+                    ...personalProfileForm,
+                    oaEnabled: event.target.checked,
+                  })
+                }
+              />
+              <span>
+                <span className="font-medium">
+                  Outcome-Aware (learn from past outcomes)
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Advisory: calibrates this profile&apos;s forecast confidence on
+                  its past predictions vs real results. Off by default.
+                  {OA_FEATURE_ENABLED ? "" : " Currently disabled on the server."}
+                </span>
+              </span>
+            </label>
+
+            <OaCalibrationPanel
+              profileId={personalProfileForm.id}
+              enabled={personalProfileForm.oaEnabled}
+            />
+
             <div className="space-y-2 rounded-md border border-border/70 bg-background/40 p-3">
               <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                 Agents & weights ({personalEnabledAgents} enabled)
@@ -5893,6 +5951,9 @@ function AnalysisTab({
                         %
                       </Badge>
                     ) : null}
+                    <OaDecisionBadge
+                      decision={selectedPersonalPayload.outcomeAware}
+                    />
                   </div>
                   <p className="text-xs text-muted-foreground">
                     Completed:{" "}
@@ -7343,6 +7404,10 @@ function extractPersonalAnalysisPayload(data: JsonRecord | null | undefined) {
       "indicatorRecommendations",
     ]),
   ) as AnalysisRun["indicatorRecommendations"] | null;
+  // Per-forecast Outcome-Aware decision, if OA ran on this run (S5/S9).
+  const outcomeAware = asJsonRecord(
+    pickRecordValue(data, ["outcome_aware", "outcomeAware"]),
+  );
 
   return {
     analysisReport:
@@ -7354,6 +7419,7 @@ function extractPersonalAnalysisPayload(data: JsonRecord | null | undefined) {
     analysisStructured,
     trendExtraction,
     indicatorRecommendations,
+    outcomeAware,
   };
 }
 

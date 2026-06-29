@@ -569,6 +569,7 @@ export type PersonalAnalysisProfileCreate = {
   agent_weights?: PersonalAgentWeights | null;
   interval_minutes?: number;
   debate_enabled?: boolean | null;
+  oa_enabled?: boolean | null;
 };
 
 export type PersonalAnalysisProfileUpdate = {
@@ -579,6 +580,7 @@ export type PersonalAnalysisProfileUpdate = {
   interval_minutes?: number | null;
   is_active?: boolean | null;
   debate_enabled?: boolean | null;
+  oa_enabled?: boolean | null;
 };
 
 export type PersonalAnalysisProfileRead = {
@@ -591,6 +593,7 @@ export type PersonalAnalysisProfileRead = {
   interval_minutes: number;
   is_active: boolean;
   debate_enabled: boolean | null;
+  oa_enabled: boolean | null;
   next_run_at: string;
   last_triggered_at: string | null;
   last_completed_at: string | null;
@@ -800,3 +803,11 @@ export type TelegramSettingsUpdate =
   components["schemas"]["TelegramSettingsUpdate"];
 export type TelegramLinkOut = components["schemas"]["TelegramLinkOut"];
 export type TelegramTestResult = components["schemas"]["TelegramTestResult"];
+
+// Outcome-Aware calibration (S9) — generated from the backend openapi schema.
+export type OaCalibrationResponse =
+  components["schemas"]["OaCalibrationResponse"];
+export type OaProfileCalibration =
+  components["schemas"]["OaProfileCalibration"];
+export type OaProfileAccuracy = components["schemas"]["OaProfileAccuracy"];
+export type OaReliabilityBin = components["schemas"]["OaReliabilityBin"];

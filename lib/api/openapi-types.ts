@@ -1861,6 +1861,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/analysis/personal/profiles/{profile_id}/oa-calibration": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Outcome-Aware calibration + accuracy for a profile */
+        get: operations["get_profile_oa_calibration_api_v1_analysis_personal_profiles__profile_id__oa_calibration_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/analysis/personal/profiles/{profile_id}/trigger": {
         parameters: {
             query?: never;
@@ -4281,6 +4298,107 @@ export interface components {
                 [key: string]: unknown;
             }[];
         };
+        /**
+         * OaCalibrationResponse
+         * @description Combined OA view served to the per-profile UI panel (S7).
+         */
+        OaCalibrationResponse: {
+            calibration?: components["schemas"]["OaProfileCalibration"] | null;
+            /** Accuracy */
+            accuracy?: components["schemas"]["OaProfileAccuracy"][];
+        };
+        /**
+         * OaProfileAccuracy
+         * @description A profile's forecast accuracy for one window (executed + shadow).
+         */
+        OaProfileAccuracy: {
+            /** Windowdays */
+            windowDays: number;
+            /**
+             * Hitrate
+             * @default 0
+             */
+            hitRate: number;
+            /**
+             * Meanedge
+             * @default 0
+             */
+            meanEdge: number;
+            /**
+             * Samplesize
+             * @default 0
+             */
+            sampleSize: number;
+            /**
+             * Realsamplesize
+             * @default 0
+             */
+            realSampleSize: number;
+            /**
+             * Shadowsamplesize
+             * @default 0
+             */
+            shadowSampleSize: number;
+            /** Horizonhours */
+            horizonHours?: number | null;
+        };
+        /**
+         * OaProfileCalibration
+         * @description A profile's probability calibrator + its out-of-sample quality (S7).
+         */
+        OaProfileCalibration: {
+            /** Method */
+            method: string;
+            /** Status */
+            status: string;
+            /** Params */
+            params?: {
+                [key: string]: number;
+            };
+            /**
+             * Samplesize
+             * @default 0
+             */
+            sampleSize: number;
+            /**
+             * Trainsize
+             * @default 0
+             */
+            trainSize: number;
+            /**
+             * Holdoutsize
+             * @default 0
+             */
+            holdoutSize: number;
+            /** Horizonhours */
+            horizonHours?: number | null;
+            /** Holdoutbrier */
+            holdoutBrier?: number | null;
+            /** Holdoutbrierraw */
+            holdoutBrierRaw?: number | null;
+            /** Holdoutlogloss */
+            holdoutLogLoss?: number | null;
+            /** Holdoutloglossraw */
+            holdoutLogLossRaw?: number | null;
+            /** Ece */
+            ece?: number | null;
+            /** Reliabilitybins */
+            reliabilityBins?: components["schemas"]["OaReliabilityBin"][];
+        };
+        /**
+         * OaReliabilityBin
+         * @description One bin of the reliability (calibration) diagram.
+         */
+        OaReliabilityBin: {
+            /** Pmid */
+            pMid: number;
+            /** Predictedmean */
+            predictedMean: number;
+            /** Observedrate */
+            observedRate: number;
+            /** Count */
+            count: number;
+        };
         /** PersonalAnalysisDefaultsRead */
         PersonalAnalysisDefaultsRead: {
             /** Available Agents */
@@ -4375,6 +4493,8 @@ export interface components {
             } | null;
             /** Debate Enabled */
             debate_enabled?: boolean | null;
+            /** Oa Enabled */
+            oa_enabled?: boolean | null;
         };
         /** PersonalAnalysisManualTriggerResponse */
         PersonalAnalysisManualTriggerResponse: {
@@ -4411,6 +4531,8 @@ export interface components {
             interval_minutes: number;
             /** Debate Enabled */
             debate_enabled?: boolean | null;
+            /** Oa Enabled */
+            oa_enabled?: boolean | null;
         };
         /** PersonalAnalysisProfileRead */
         PersonalAnalysisProfileRead: {
@@ -4436,6 +4558,8 @@ export interface components {
             is_active: boolean;
             /** Debate Enabled */
             debate_enabled: boolean | null;
+            /** Oa Enabled */
+            oa_enabled: boolean | null;
             /**
              * Next Run At
              * Format: date-time
@@ -4476,6 +4600,8 @@ export interface components {
             is_active?: boolean | null;
             /** Debate Enabled */
             debate_enabled?: boolean | null;
+            /** Oa Enabled */
+            oa_enabled?: boolean | null;
         };
         /** PortfolioBacktestRequest */
         PortfolioBacktestRequest: {
@@ -6038,6 +6164,8 @@ export interface operations {
         parameters: {
             query?: {
                 since_days?: number;
+                /** @description Also return counterfactual outcomes for forecasts never entered (OA). */
+                include_shadow?: boolean;
             };
             header?: {
                 "X-Internal-API-Key"?: string | null;
@@ -8674,6 +8802,37 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_oa_calibration_api_v1_analysis_personal_profiles__profile_id__oa_calibration_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                profile_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OaCalibrationResponse"];
+                };
             };
             /** @description Validation Error */
             422: {

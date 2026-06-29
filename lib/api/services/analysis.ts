@@ -1,6 +1,7 @@
 import { ApiError, apiRequest } from "@/lib/api/client";
 import type {
   AnalysisRunsResponse,
+  OaCalibrationResponse,
   PersonalAnalysisDefaultsRead,
   PersonalAnalysisHistoryRead,
   PersonalAnalysisJobRead,
@@ -116,4 +117,10 @@ export async function getPersonalAnalysisLatest(params: {
       symbol: params.symbol,
     },
   });
+}
+
+export async function getProfileOaCalibration(profileId: number) {
+  return apiRequest<OaCalibrationResponse>(
+    `/api/v1/analysis/personal/profiles/${profileId}/oa-calibration`,
+  );
 }
